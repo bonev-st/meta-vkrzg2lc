@@ -17,8 +17,11 @@
     cd $HOME/work/vkrzg2lc/vlp_305/yocto
 
 4. get helper utils
-    wget https://raw.githubusercontent.com/Vekatech/vkrz-build-utils/yocto_305/create_yocto_305_vkrzg2lc_src.sh
-    wget https://raw.githubusercontent.com/Vekatech/vkrz-build-utils/yocto_305/run_docker
+    wget https://raw.githubusercontent.com/Vekatech/vkrz-build-utils/main/yocto_305/create_yocto_305_vkrzg2lc_src.sh
+    wget https://raw.githubusercontent.com/Vekatech/vkrz-build-utils/main/yocto_305/run_docker
+
+    chmod a+x create_yocto_305_vkrzg2lc_src.sh
+    chmod a+x run_docker
 
 5. adjust paths in "create_yocto_305_vkrzg2lc_src.sh" as follows 
     PKGKDIR=$HOME/work/rzg_vlp_v3.0.5   - directory with source archives
@@ -26,18 +29,21 @@
     YOCTO_HOME="${WORKSPACE}/yocto_305" - yocto dir
     BUILD_DIR="build"                   - build dir 
 
-6. start docker (optional)
+6. create yocto sources
+    ./create_yocto_305_vkrzg2lc_src.sh
+
+7. start docker (optional)
     run_docker
 
-7. go to YOCTO_HOME 
+8. go to YOCTO_HOME 
     cd yocto_305 
 
-8. TEMPLATECONF=$PWD/meta-vkrzg2lc/docs/template/conf
+9. TEMPLATECONF=$PWD/meta-vkrzg2lc/docs/template/conf
 
-9. source poky/oe-init-build-env build - build has to be the same as BUILD_DIR in sh script
+10. source poky/oe-init-build-env build - build has to be the same as BUILD_DIR in sh script
 
-10. adjust layers
+11. adjust layers
     bitbake-layers add-layer ../meta-xxx 
 
-11. start a build 
+12. start a build 
     bitbake core-image-<target>
