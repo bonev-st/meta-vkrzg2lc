@@ -1,0 +1,45 @@
+From 82529315a4f2f229b3c8238bed030516bf714c5d Mon Sep 17 00:00:00 2001
+From: dtodoroff <d.todorov@vekatech.com>
+Date: Fri, 17 Nov 2023 10:41:58 +0200
+Subject: [PATCH] add vkrzg2lc board support
+
+---
+ core/arch/arm/plat-rz/conf.mk            | 3 +++
+ core/arch/arm/plat-rz/g2l/rzg2l_config.h | 7 +++++++
+ 2 files changed, 10 insertions(+)
+
+diff --git a/core/arch/arm/plat-rz/conf.mk b/core/arch/arm/plat-rz/conf.mk
+index 68f0a1c6..f6559545 100644
+--- a/core/arch/arm/plat-rz/conf.mk
++++ b/core/arch/arm/plat-rz/conf.mk
+@@ -21,6 +21,9 @@ include core/arch/arm/plat-rz/g2l/rzg2l_conf.mk
+ else ifeq ($(PLATFORM_FLAVOR),g2ul_smarc)
+ $(call force,CFG_PLATFORM_GROUP_g2l,y)
+ include core/arch/arm/plat-rz/g2l/rzg2l_conf.mk
++else ifeq ($(PLATFORM_FLAVOR),g2lc_vkrz_2)
++$(call force,CFG_PLATFORM_GROUP_g2l,y)
++include core/arch/arm/plat-rz/g2l/rzg2l_conf.mk
+ else
+ $(error Unsupported PLATFORM_FLAVOR "$(PLATFORM_FLAVOR)")
+ endif
+diff --git a/core/arch/arm/plat-rz/g2l/rzg2l_config.h b/core/arch/arm/plat-rz/g2l/rzg2l_config.h
+index 3696745d..8f0ffb0b 100644
+--- a/core/arch/arm/plat-rz/g2l/rzg2l_config.h
++++ b/core/arch/arm/plat-rz/g2l/rzg2l_config.h
+@@ -61,6 +61,13 @@
+ #define NSEC_DDR_0_BASE		0x47E00000U
+ #define NSEC_DDR_0_SIZE		0x38200000
+ 
++#elif defined(PLATFORM_FLAVOR_g2lc_vkrz_2)
++/* DDR 1Gbyte x2 */
++#define NSEC_DDR_0_BASE		0x47E00000U
++#define NSEC_DDR_0_SIZE		0x38200000
++#define NSEC_DDR_1_BASE		0x80000000U
++#define NSEC_DDR_1_SIZE		0x40000000
++
+ #else
+ #error "Unknown platform flavor"
+ #endif
+-- 
+2.34.1
+

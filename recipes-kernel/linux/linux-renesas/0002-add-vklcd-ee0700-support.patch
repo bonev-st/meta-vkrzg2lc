@@ -1,0 +1,126 @@
+From 453a677dd0e6e4dc3c7c7f9e42ba94e97bf0780f Mon Sep 17 00:00:00 2001
+From: dtodoroff <d.todorov@vekatech.com>
+Date: Wed, 29 Nov 2023 10:46:29 +0200
+Subject: [PATCH 2/2] add vklcd-ee0700 support
+
+---
+ arch/arm64/boot/dts/renesas/overlays/Makefile |  1 +
+ .../overlays/vkrz-mipi_vklcd-ee0700.dts       | 61 +++++++++++++++++++
+ arch/arm64/boot/dts/renesas/vkrzg2lc.dts      | 10 +++
+ arch/arm64/configs/vkrzg2lc_defconfig         |  2 +
+ 4 files changed, 74 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/renesas/overlays/vkrz-mipi_vklcd-ee0700.dts
+
+diff --git a/arch/arm64/boot/dts/renesas/overlays/Makefile b/arch/arm64/boot/dts/renesas/overlays/Makefile
+index 1ee56528bc0b..2b86b5a7e554 100644
+--- a/arch/arm64/boot/dts/renesas/overlays/Makefile
++++ b/arch/arm64/boot/dts/renesas/overlays/Makefile
+@@ -6,6 +6,7 @@ DTC_FLAGS += -@
+ dtb-y += vkrz-can.dtbo
+ dtb-y += vkrz-mipi_av_disp2.dtbo
+ dtb-y += vkrz-mipi_vklcd07.dtbo
++dtb-y += vkrz-mipi_vklcd-ee0700.dtbo
+ dtb-y += vkrz-imx219.dtbo
+ dtb-y += vkrz-io-i2c2.dtbo
+ dtb-y += vkrz-io-i2c3.dtbo
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-mipi_vklcd-ee0700.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-mipi_vklcd-ee0700.dts
+new file mode 100644
+index 000000000000..58a372d25688
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/overlays/vkrz-mipi_vklcd-ee0700.dts
+@@ -0,0 +1,61 @@
++/*
++ * Copyright 2023 Vekatech
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/pinctrl/rzg2l-pinctrl.h>
++#include <dt-bindings/gpio/gpio.h>
++
++&du {
++	status = "okay";
++};
++
++&dsi0 {
++	status = "okay";
++	ports {
++		port@1 {
++			dsi0_out: endpoint {
++				remote-endpoint = <&panel_in>;
++			};
++		};
++	};
++};
++
++&mipi_panel {
++	status = "okay";
++	compatible = "vekatech,vklcd07","fitipower,ek79007ad";
++
++	reset-gpios = <&pinctrl RZG2L_GPIO(22, 1) (GPIO_ACTIVE_LOW|GPIO_OPEN_DRAIN)>;
++	lcd-model = "vklcd07";
++	dsi-lanes = <4>;
++	port {
++		panel_in: endpoint {
++			remote-endpoint = <&dsi0_out>;
++		};
++	};
++};
++
++&gpt3 {
++	status = "okay";
++};
++
++&backlight {
++	status = "okay";
++};
++
++&mxt1066t2 {
++	status = "okay";
++	reset-gpios = <&pinctrl RZG2L_GPIO(4, 1) GPIO_ACTIVE_LOW>;
++};
+diff --git a/arch/arm64/boot/dts/renesas/vkrzg2lc.dts b/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
+index 555dddc6134d..42d105c5b29c 100755
+--- a/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
++++ b/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
+@@ -568,6 +568,16 @@ gt911: gt911_ts@14 {
+ 		irq-gpios = <&pinctrl RZG2L_GPIO(43, 1) GPIO_ACTIVE_HIGH>;   /* DSI_TS_nINT */
+ 	};
+ 
++	mxt1066t2: mxt1066t2_ts@4a {
++		compatible = "atmel,maxtouch";
++		reg = <0x4a>;
++
++		status = "disabled";
++
++		interrupt-parent = <&pinctrl>;
++		interrupts = <RZG2L_GPIO(43, 1) IRQ_TYPE_EDGE_FALLING>;
++		irq-gpios = <&pinctrl RZG2L_GPIO(43, 1) GPIO_ACTIVE_HIGH>;   /* DSI_TS_nINT */
++	};
+ };
+ 
+ &ssi0 {
+diff --git a/arch/arm64/configs/vkrzg2lc_defconfig b/arch/arm64/configs/vkrzg2lc_defconfig
+index 1c4b37178931..95402943e883 100644
+--- a/arch/arm64/configs/vkrzg2lc_defconfig
++++ b/arch/arm64/configs/vkrzg2lc_defconfig
+@@ -498,3 +498,5 @@ CONFIG_USB_STORAGE_DEBUG=y
+ CONFIG_USB_GADGET_DEBUG=y
+ CONFIG_USB_GADGET_VERBOSE=y
+ CONFIG_USB_GADGET_DEBUG_FILES=y
++#
++CONFIG_TOUCHSCREEN_ATMEL_MXT=m
+-- 
+2.34.1
+

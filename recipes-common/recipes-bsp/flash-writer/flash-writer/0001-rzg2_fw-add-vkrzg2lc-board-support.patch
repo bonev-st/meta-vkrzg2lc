@@ -1,0 +1,235 @@
+From ab22dd3c3d8d60fa8c6c406f0a917b0d35d9db6c Mon Sep 17 00:00:00 2001
+From: dtodoroff <d.todorov@vekatech.com>
+Date: Thu, 12 Oct 2023 13:12:17 +0300
+Subject: [PATCH] add vkrzg2lc board support
+
+---
+ ddr/common/param_swizzle_T3bc.c  | 76 ++++++++++++++++----------------
+ ddr/g2l/param_mc_C-011_D4-01-1.c | 12 ++---
+ dgmodul4.c                       |  4 +-
+ include/dgmodul4.h               |  2 +-
+ makefile                         |  9 ++++
+ makefile.linaro                  |  9 ++++
+ 6 files changed, 66 insertions(+), 46 deletions(-)
+
+diff --git a/ddr/common/param_swizzle_T3bc.c b/ddr/common/param_swizzle_T3bc.c
+index 2174744..82dd86a 100644
+--- a/ddr/common/param_swizzle_T3bc.c
++++ b/ddr/common/param_swizzle_T3bc.c
+@@ -1,73 +1,73 @@
+ /*
+- * Copyright (c) 2020-2021, Renesas Electronics Corporation. All rights reserved.
+- *
++ * Copyright (c) 2020-2022, Renesas Electronics Corporation. All rights reserved.
+  * SPDX-License-Identifier: BSD-3-Clause
++ * This code was generated with RZ/G2L, G2UL, Five, A3UL DDR config generation tool v3.0.1
+  */
+ 
+ #include <stdint.h>
+ #include <ddr_internal.h>
+ 
+ const uint32_t mc_odt_pins_tbl[4] = {
+-	0x00000001,
+-	0x00000000,
+-	0x00000000,
++	0x00000001	,
++	0x00000000	,
++	0x00000000	,
+ 	0x00000000
+ };
+ 
+ const uint32_t mc_mr1_tbl[2] = {
+-	0x00000706,
++	0x00000706	,
+ 	0x00000100
+ };
+ 
+ const uint32_t mc_mr2_tbl[2] = {
+-	0x00000E00,
++	0x00000E00	,
+ 	0x00000000
+ };
+ 
+ const uint32_t mc_mr5_tbl[2] = {
+-	0x000001C0,
++	0x000001C0	,
+ 	0x000001C0
+ };
+ 
+ const uint32_t mc_mr6_tbl[2] = {
+-	0x0000007F,
++	0x0000007F	,
+ 	0x0000000F
+ };
+ 
+ const uint32_t mc_phy_settings_tbl[MC_PHYSET_NUM][2] = {
+-	{DDRMC_R040,	0x57630BB8},
+-	{DDRMC_R041,	0x00002828},
+-	{DDRMC_R042,	0x00003C22},
+-	{DDRMC_R043,	0x00102611}
++	{DDRMC_R040,	0x57630BB8	},
++	{DDRMC_R041,	0x00002828	},
++	{DDRMC_R042,	0x00003C22	},
++	{DDRMC_R043,	0x00102611	}
+ };
+ 
+ const uint32_t swizzle_mc_tbl[SWIZZLE_MC_NUM][2] = {
+-	{DDRMC_R030,	0x00000000},
+-	{DDRMC_R031,	0x00000000},
+-	{DDRMC_R032,	0x1C191E13},
+-	{DDRMC_R033,	0x12000A18},
+-	{DDRMC_R034,	0x100B1D00},
+-	{DDRMC_R035,	0x1F0C1B09},
+-	{DDRMC_R036,	0x151A1614},
+-	{DDRMC_R037,	0x000D0E17},
+-	{DDRMC_R038,	0x00000000}
++	{DDRMC_R030,	0x00000000	},
++	{DDRMC_R031,	0x00000000	},
++	{DDRMC_R032,	0x1C191E13	},
++	{DDRMC_R033,	0x12000A18	},
++	{DDRMC_R034,	0x100B1D00	},
++	{DDRMC_R035,	0x1F0C1B09	},
++	{DDRMC_R036,	0x151A1614	},
++	{DDRMC_R037,	0x000D0E17	},
++	{DDRMC_R038,	0x00000000	}
+ };
+ 
+ const uint32_t swizzle_phy_tbl[SIZZLE_PHY_NUM][2] = {
+-	{DDRPHY_R29,	0x00000000},
+-	{DDRPHY_R11,	0x0A070E16},
+-	{DDRPHY_R29,	0x00000001},
+-	{DDRPHY_R11,	0x18140B08},
+-	{DDRPHY_R29,	0x00000002},
+-	{DDRPHY_R11,	0x00170409},
+-	{DDRPHY_R29,	0x00000003},
+-	{DDRPHY_R11,	0x0F030619},
+-	{DDRPHY_R29,	0x00000004},
+-	{DDRPHY_R11,	0x13121110},
+-	{DDRPHY_R29,	0x00000005},
+-	{DDRPHY_R11,	0x05020C0D},
+-	{DDRPHY_R29,	0x00000006},
+-	{DDRPHY_R11,	0x1B1A1501},
+-	{DDRPHY_R29,	0x00000007},
+-	{DDRPHY_R11,	0x001E1D1C}
++	{DDRPHY_R29,	0x00000000	},
++	{DDRPHY_R11,	0x0A070E16	},
++	{DDRPHY_R29,	0x00000001	},
++	{DDRPHY_R11,	0x18140B08	},
++	{DDRPHY_R29,	0x00000002	},
++	{DDRPHY_R11,	0x00170409	},
++	{DDRPHY_R29,	0x00000003	},
++	{DDRPHY_R11,	0x0F030619	},
++	{DDRPHY_R29,	0x00000004	},
++	{DDRPHY_R11,	0x13121110	},
++	{DDRPHY_R29,	0x00000005	},
++	{DDRPHY_R11,	0x05020C0D	},
++	{DDRPHY_R29,	0x00000006	},
++	{DDRPHY_R11,	0x1B1A1501	},
++	{DDRPHY_R29,	0x00000007	},
++	{DDRPHY_R11,	0x001E1D1C	}
+ };
+diff --git a/ddr/g2l/param_mc_C-011_D4-01-1.c b/ddr/g2l/param_mc_C-011_D4-01-1.c
+index 3465874..ee92114 100644
+--- a/ddr/g2l/param_mc_C-011_D4-01-1.c
++++ b/ddr/g2l/param_mc_C-011_D4-01-1.c
+@@ -1,12 +1,14 @@
+ /*
+- * Copyright (c) 2020-2021, Renesas Electronics Corporation. All rights reserved.
+- *
++ * Copyright (c) 2020-2022, Renesas Electronics Corporation. All rights reserved.
+  * SPDX-License-Identifier: BSD-3-Clause
++ * This code was generated with RZ/G2L, G2UL, Five, A3UL DDR config generation tool v3.0.1
+  */
+ 
+ #include <stdint.h>
+ #include <ddr_mc_regs.h>
+ 
++const char ddr_an_version[] = "v3.0.1";
++
+ const uint32_t mc_init_tbl[MC_INIT_NUM][2] = {
+ 	{	DENALI_CTL_00,	0x00000A00	},
+ 	{	DENALI_CTL_01,	0x00000000	},
+@@ -188,9 +190,9 @@ const uint32_t mc_init_tbl[MC_INIT_NUM][2] = {
+ 	{	DENALI_CTL_177,	0x01030000	},
+ 	{	DENALI_CTL_178,	0x03000302	},
+ 	{	DENALI_CTL_179,	0x00000000	},
+-	{	DENALI_CTL_180,	0x00080800	},
+-	{	DENALI_CTL_181,	0x00080800	},
+-	{	DENALI_CTL_182,	0x00080800	},
++	{	DENALI_CTL_180,	0x00080801	},
++	{	DENALI_CTL_181,	0x00080801	},
++	{	DENALI_CTL_182,	0x00070601	},
+ 	{	DENALI_CTL_183,	0x00000000	},
+ 	{	DENALI_CTL_184,	0x000FFFFF	},
+ 	{	DENALI_CTL_185,	0xFFFFFFFF	},
+diff --git a/dgmodul4.c b/dgmodul4.c
+index ab37074..8e72941 100644
+--- a/dgmodul4.c
++++ b/dgmodul4.c
+@@ -147,8 +147,8 @@ static uint32_t CheckQspiFlashId(void)
+ 						gQspi_sa_size    = SA_64KB;
+ 						gQspi_end_addess = TOTAL_SIZE_64MB - 0x8000 - 1;
+ 				break;
+-				case DEVICE_ID_MX66U25635F:
+-						PutStr("MX66U25635F", 1);
++				case DEVICE_ID_MX25U25645G:
++						PutStr("MX25U25645G", 1);
+ 						gQspi_sa_size    = SA_64KB;
+ 						gQspi_end_addess = TOTAL_SIZE_32MB - 0x8000 - 1;
+ 				break;
+diff --git a/include/dgmodul4.h b/include/dgmodul4.h
+index 2e20529..3a6719e 100644
+--- a/include/dgmodul4.h
++++ b/include/dgmodul4.h
+@@ -56,7 +56,7 @@
+ #define	DEVICE_ID_MX25L12805		0x2018
+ #define	DEVICE_ID_MX25L25645G		0x2019
+ #define	DEVICE_ID_MX25L51245G		0x201A
+-#define	DEVICE_ID_MX66U25635F		0x2539
++#define	DEVICE_ID_MX25U25645G		0x2539
+ #define	DEVICE_ID_MX66U51235F		0x253A
+ #define	DEVICE_ID_MX66UM1G45G		0x803B
+ #define	DEVICE_ID_MX66UW1G45G		0x813B
+diff --git a/makefile b/makefile
+index 0d4c834..d264143 100644
+--- a/makefile
++++ b/makefile
+@@ -62,6 +62,15 @@ DEVICE   = RZG2LC
+ DDR_TYPE = DDR3L
+ DDR_SIZE = 1GB
+ SWIZZLE  = T3CL
++else ifeq ("$(BOARD)", "VKRZG2LC")
++#--------------------------------------
++# VK-RZ/G2LC board
++#--------------------------------------
++FILENAME_ADD = _VKRZG2LC
++DEVICE   = RZG2LC
++DDR_TYPE = DDR4
++DDR_SIZE = 2GB_1PCS
++SWIZZLE  = T3BC
+ else ifeq ("$(BOARD)", "RZG2UL_TYPE1_DEV")
+ #--------------------------------------
+ # RZ/G2UL Type1 DDR4 Dev board
+diff --git a/makefile.linaro b/makefile.linaro
+index 453572f..ab7fb63 100644
+--- a/makefile.linaro
++++ b/makefile.linaro
+@@ -62,6 +62,15 @@ DEVICE   = RZG2LC
+ DDR_TYPE = DDR3L
+ DDR_SIZE = 1GB
+ SWIZZLE  = T3CL
++else ifeq ("$(BOARD)", "VKRZG2LC")
++#--------------------------------------
++# VK-RZ/G2LC board
++#--------------------------------------
++FILENAME_ADD = _VKRZG2LC
++DEVICE   = RZG2LC
++DDR_TYPE = DDR4
++DDR_SIZE = 2GB_1PCS
++SWIZZLE  = T3BC
+ else ifeq ("$(BOARD)", "RZG2UL_TYPE1_DEV")
+ #--------------------------------------
+ # RZ/G2UL Type1 DDR4 Dev board
+-- 
+2.34.1
+
