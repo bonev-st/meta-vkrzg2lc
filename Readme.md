@@ -8,7 +8,7 @@
 2. download source archives 
 # Make sure that the following packages have been downloaded from the official website https://www.renesas.com
 # RZ/G Verified Linux Package [5.10-CIP]  V3.0.5
-    RTK0EF0045Z0021AZJ-v3.0.5.zip, 
+    RTK0EF0045Z0021AZJ-v3.0.5-update1.zip, 
     RTK0EF0045Z13001ZJ-v1.1.2_EN.zip, 
     RTK0EF0045Z15001ZJ-v1.1.0_EN.zip, 
     r01an5869ej0122-rzg2l-cm33-multi-os-pkg.zip, 

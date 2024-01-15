@@ -1,0 +1,326 @@
+From 713c83faf281df2d46edd9053e449a0eb1018657 Mon Sep 17 00:00:00 2001
+From: dtodoroff <d.todorov@vekatech.com>
+Date: Fri, 12 Jan 2024 16:22:28 +0200
+Subject: [PATCH 4/4] add extra overalys (audio, cm33, udmabuf)
+
+
+diff --git a/arch/arm64/boot/dts/renesas/overlays/Makefile b/arch/arm64/boot/dts/renesas/overlays/Makefile
+index 2b86b5a7e554..1ca4a1510bb6 100644
+--- a/arch/arm64/boot/dts/renesas/overlays/Makefile
++++ b/arch/arm64/boot/dts/renesas/overlays/Makefile
+@@ -3,16 +3,19 @@
+ # required for overlay support
+ DTC_FLAGS += -@
+ 
++dtb-y += vkrz-audio.dtbo
+ dtb-y += vkrz-can.dtbo
+-dtb-y += vkrz-mipi_av_disp2.dtbo
+-dtb-y += vkrz-mipi_vklcd07.dtbo
+-dtb-y += vkrz-mipi_vklcd-ee0700.dtbo
+-dtb-y += vkrz-imx219.dtbo
+-dtb-y += vkrz-io-i2c2.dtbo
+-dtb-y += vkrz-io-i2c3.dtbo
+-dtb-y += vkrz-io-spi1.dtbo
+-dtb-y += vkrz-io-scfi1.dtbo
+-dtb-y += vkrz-io-scfi1_rst_cts.dtbo
+-dtb-y += vkrz-io-scfi3.dtbo
+-dtb-y += vkrz-io-pwm0.dtbo
+-dtb-y += vkrz-io-pwm1.dtbo
++dtb-y += vkrz-cm33.dtbo
++dtb-y += vkrz-csi-imx219.dtbo
++dtb-y += vkrz-dsi-av_disp2.dtbo
++dtb-y += vkrz-dsi-vklcd07.dtbo
++dtb-y += vkrz-dsi-vklcd-ee0700.dtbo
++dtb-y += vkrz-exp-i2c2.dtbo
++dtb-y += vkrz-exp-i2c3.dtbo
++dtb-y += vkrz-exp-spi1.dtbo
++dtb-y += vkrz-exp-scfi1.dtbo
++dtb-y += vkrz-exp-scfi1_rst_cts.dtbo
++dtb-y += vkrz-exp-scfi3.dtbo
++dtb-y += vkrz-exp-pwm0.dtbo
++dtb-y += vkrz-exp-pwm1.dtbo
++dtb-y += vkrz-udma.dtbo
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-audio.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-audio.dts
+new file mode 100644
+index 000000000000..3dcafd4306bb
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/overlays/vkrz-audio.dts
+@@ -0,0 +1,45 @@
++/*
++ * Copyright 2023 Vekatech
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ */
++
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/pinctrl/rzg2l-pinctrl.h>
++#include <dt-bindings/gpio/gpio.h>
++
++/dts-v1/;
++/plugin/;
++
++
++&audio_codec {
++	status = "okay";
++};
++
++&ssi0 {
++	pinctrl-0 = <&ssi0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++&da7212 {
++	status = "okay";
++};
++
++&pinctrl {
++	ssi0_pins: ssi0 {
++		pinmux = <RZG2L_PORT_PINMUX(45, 0, 1)>, /* BCK */
++			 <RZG2L_PORT_PINMUX(45, 1, 1)>, /* RCK */
++			 <RZG2L_PORT_PINMUX(45, 2, 1)>, /* TXD */
++			 <RZG2L_PORT_PINMUX(45, 3, 1)>; /* RXD */
++	};
++};
++
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-cm33.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-cm33.dts
+new file mode 100755
+index 000000000000..40ceec25cff6
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/overlays/vkrz-cm33.dts
+@@ -0,0 +1,75 @@
++/*
++ * Copyright 2024 Vekatech
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++
++
++/ {
++	compatible = "vekatech,vkrzg2lc", "renesas,r9a07g044";
++	fragment@2 {
++		target-path = "/";
++		__overlay__ {
++			#address-cells = <2>;
++			#size-cells = <2>;
++
++			vring-ctl0@43000000 {
++				compatible = "vring_uio";
++				reg = <0x0 0x43000000 0x0 0x100000>;
++				no-map;
++			};
++
++			vring-ctl1@43100000 {
++				compatible = "vring_uio";
++				reg = <0x0 0x43100000 0x0 0x100000>;
++				no-map;
++			};
++
++			vring-shm0@43200000 {
++				compatible = "shm_uio";
++				reg = <0x0 0x43200000 0x0 0x300000>;
++				no-map;
++			};
++
++			vring-shm1@43500000 {
++				compatible = "shm_uio";
++				reg = <0x0 0x43500000 0x0 0x300000>;
++				no-map;
++			};
++
++			rsctbl@42f00000 {
++				compatible = "shm_uio";
++				reg = <0x0 0x42f00000 0x0 0x1000>;
++				no-map;
++			};
++
++			mhu-shm@42f01000 {
++				compatible = "shm_uio";
++				reg = <0x0 0x42f01000 0x0 0x1000>;
++				no-map;
++			};
++
++			mbox-uio@10400000 {
++				compatible = "mbox_uio";
++				reg = <0x0 0x10400000 0x0 0x1000>;
++				interrupt-parent = <&gic>;
++				interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
++				status = "okay";
++			};
++		};
++	};
++};
++
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-imx219.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-csi-imx219.dts
+similarity index 100%
+rename from arch/arm64/boot/dts/renesas/overlays/vkrz-imx219.dts
+rename to arch/arm64/boot/dts/renesas/overlays/vkrz-csi-imx219.dts
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-mipi_av_disp2.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-av_disp2.dts
+similarity index 100%
+rename from arch/arm64/boot/dts/renesas/overlays/vkrz-mipi_av_disp2.dts
+rename to arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-av_disp2.dts
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-mipi_vklcd-ee0700.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-vklcd-ee0700.dts
+similarity index 100%
+rename from arch/arm64/boot/dts/renesas/overlays/vkrz-mipi_vklcd-ee0700.dts
+rename to arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-vklcd-ee0700.dts
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-mipi_vklcd07.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-vklcd07.dts
+similarity index 100%
+rename from arch/arm64/boot/dts/renesas/overlays/vkrz-mipi_vklcd07.dts
+rename to arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-vklcd07.dts
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-io-i2c2.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-exp-i2c2.dts
+similarity index 100%
+rename from arch/arm64/boot/dts/renesas/overlays/vkrz-io-i2c2.dts
+rename to arch/arm64/boot/dts/renesas/overlays/vkrz-exp-i2c2.dts
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-io-i2c3.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-exp-i2c3.dts
+similarity index 100%
+rename from arch/arm64/boot/dts/renesas/overlays/vkrz-io-i2c3.dts
+rename to arch/arm64/boot/dts/renesas/overlays/vkrz-exp-i2c3.dts
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-io-pwm0.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-exp-pwm0.dts
+similarity index 100%
+rename from arch/arm64/boot/dts/renesas/overlays/vkrz-io-pwm0.dts
+rename to arch/arm64/boot/dts/renesas/overlays/vkrz-exp-pwm0.dts
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-io-pwm1.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-exp-pwm1.dts
+similarity index 100%
+rename from arch/arm64/boot/dts/renesas/overlays/vkrz-io-pwm1.dts
+rename to arch/arm64/boot/dts/renesas/overlays/vkrz-exp-pwm1.dts
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-io-scfi1.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-exp-scfi1.dts
+similarity index 100%
+rename from arch/arm64/boot/dts/renesas/overlays/vkrz-io-scfi1.dts
+rename to arch/arm64/boot/dts/renesas/overlays/vkrz-exp-scfi1.dts
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-io-scfi1_rst_cts.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-exp-scfi1_rst_cts.dts
+similarity index 100%
+rename from arch/arm64/boot/dts/renesas/overlays/vkrz-io-scfi1_rst_cts.dts
+rename to arch/arm64/boot/dts/renesas/overlays/vkrz-exp-scfi1_rst_cts.dts
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-io-scfi3.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-exp-scfi3.dts
+similarity index 100%
+rename from arch/arm64/boot/dts/renesas/overlays/vkrz-io-scfi3.dts
+rename to arch/arm64/boot/dts/renesas/overlays/vkrz-exp-scfi3.dts
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-io-spi1.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-exp-spi1.dts
+similarity index 100%
+rename from arch/arm64/boot/dts/renesas/overlays/vkrz-io-spi1.dts
+rename to arch/arm64/boot/dts/renesas/overlays/vkrz-exp-spi1.dts
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-udma.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-udma.dts
+new file mode 100644
+index 000000000000..277b66a81d4f
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/overlays/vkrz-udma.dts
+@@ -0,0 +1,41 @@
++/*
++ * Copyright 2024 Vekatech
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++
++
++/ {
++	compatible = "vekatech,vkrzg2lc", "renesas,r9a07g044";
++
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++			#address-cells = <2>;
++			#size-cells = <2>;
++
++			udmabuf@0 {
++				compatible = "ikwzm,u-dma-buf";
++				device-name = "udmabuf0";
++				minor-number = <0>;
++				size = <0x4000000>; /* 64MiB */
++				dma-coherent;
++			};
++		};
++	};
++};
++
++
+diff --git a/arch/arm64/boot/dts/renesas/vkrzg2lc.dts b/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
+index 6037619569ec..cad605970da5 100755
+--- a/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
++++ b/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
+@@ -186,12 +186,13 @@ user_key@1 {
+ 		};
+ 	};
+ 
+-	sound-da7212 {
++	audio_codec: sound-da7212 {
+ 		compatible = "simple-audio-card";
+ 		simple-audio-card,name = "audio-da7212";
+ 		simple-audio-card,format = "i2s";
+ 		simple-audio-card,bitclock-master = <&cpu_dai>;
+ 		simple-audio-card,frame-master = <&cpu_dai>;
++		status = "disabled";
+ 
+ 		simple-audio-card,widgets =
+ 			"Microphone", "Microphone Jack",
+@@ -470,6 +471,7 @@ da7212: codec@1a {
+ 		VDDMIC-supply = <&reg_3p3v>;
+ 		clocks = <&audio_mclock>;
+ 		clock-names = "mclk";
++		status = "disabled";
+ 	};
+ 
+ 	eeprom_i2c: eeprom_i2c@50 {
+@@ -536,12 +538,6 @@ mxt1066t2: mxt1066t2_ts@4a {
+ 	};
+ };
+ 
+-&ssi0 {
+-	pinctrl-0 = <&ssi0_pins>;
+-	pinctrl-names = "default";
+-	status = "okay";
+-};
+-
+ &gpt3 {
+ 	pinctrl-0 = <&gpt3_pins>;
+ 	pinctrl-names = "default";
+@@ -659,13 +655,6 @@ usb1_pins: usb1 {
+ 			 <RZG2L_PORT_PINMUX(42, 1, 1)>; /* OVC */
+ 	};
+ 
+-	ssi0_pins: ssi0 {
+-		pinmux = <RZG2L_PORT_PINMUX(45, 0, 1)>, /* BCK */
+-			 <RZG2L_PORT_PINMUX(45, 1, 1)>, /* RCK */
+-			 <RZG2L_PORT_PINMUX(45, 2, 1)>, /* TXD */
+-			 <RZG2L_PORT_PINMUX(45, 3, 1)>; /* RXD */
+-	};
+-
+ 	gpt3_pins: gpt3 {
+ 		pinmux = <RZG2L_PORT_PINMUX(19, 1, 2)>; /* Channel B */
+ 	};
+-- 
+2.34.1
+

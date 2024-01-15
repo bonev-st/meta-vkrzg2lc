@@ -7,6 +7,8 @@ SRCREV = "1fa7acb4360944216070a41a9da26e6595c20998"
 SRC_URI_append_vkrzg2lc = " \
 	file://0001-add-vkrzg2lc-board-support.patch \
 	file://0002-add-vklcd-ee0700-support.patch \
+	file://0003-reduce-memory-buffers-for-vkrzg2lc-board.patch \
+	file://0004-add-extra-overalys-audio-cm33-udmabuf.patch \
 "
 
 KBUILD_DEFCONFIG = "defconfig"
@@ -33,6 +35,8 @@ SRC_URI += " \
 	file://USB_GADGET.cfg \
 	file://USB_ACM.cfg \
 "
+
+SRC_URI += " ${@oe.utils.conditional("CONFIG_HASSI", "1", " file://docker.cfg file://apparmor.cfg ", "", d)} " 
 
 # support to build dtbo
 KERNEL_DTC_FLAGS = "-@"

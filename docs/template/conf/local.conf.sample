@@ -304,11 +304,16 @@ BB_GIT_SHALLOW_DEPTH = "1"
 # Remove dnf package which causes high CPU workload
 PACKAGE_INSTALL_remove = " dnf "
 
+# Add kernel configs for Home assistant 
+CONFIG_HASSI = "0" 
+
 # Support WIC images with default wks from WKS_DEFAULT_FILE
 # Reupdate WKS_DEFAULT_FILE if want to support another wks file.
 WKS_SUPPORT ?= "1"
 # Defines additional free disk space created in the image in Kbytes.
 IMAGE_ROOTFS_EXTRA_SPACE = "1048576"
+
+CONFIG_WKS_eMMC = "0"
 
 # Generate spdx files
 #INHERIT += "create-spdx"
