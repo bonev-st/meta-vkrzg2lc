@@ -9,6 +9,7 @@ SRC_URI_append_vkrzg2lc = " \
 	file://0002-add-vklcd-ee0700-support.patch \
 	file://0003-reduce-memory-buffers-for-vkrzg2lc-board.patch \
 	file://0004-add-extra-overalys-audio-cm33-udmabuf.patch \
+	file://0005-remove-udmabuf-from-main-device-tree.patch \
 "
 
 KBUILD_DEFCONFIG = "defconfig"

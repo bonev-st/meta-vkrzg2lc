@@ -1,7 +1,7 @@
 From 453a677dd0e6e4dc3c7c7f9e42ba94e97bf0780f Mon Sep 17 00:00:00 2001
 From: dtodoroff <d.todorov@vekatech.com>
 Date: Wed, 29 Nov 2023 10:46:29 +0200
-Subject: [PATCH 2/4] add vklcd-ee0700 support
+Subject: [PATCH 2/5] add vklcd-ee0700 support
 
 
 diff --git a/arch/arm64/boot/dts/renesas/overlays/Makefile b/arch/arm64/boot/dts/renesas/overlays/Makefile

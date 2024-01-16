@@ -1,7 +1,7 @@
 From a40ec37ab472d6e2fcbc61a23b032482f6e576c7 Mon Sep 17 00:00:00 2001
 From: dtodoroff <d.todorov@vekatech.com>
 Date: Thu, 16 Nov 2023 10:20:02 +0200
-Subject: [PATCH 1/4] add vkrzg2lc board support
+Subject: [PATCH 1/5] add vkrzg2lc board support
 
 
 diff --git a/Documentation/devicetree/bindings/display/panel/fitipower,ek79007ad.yaml b/Documentation/devicetree/bindings/display/panel/fitipower,ek79007ad.yaml

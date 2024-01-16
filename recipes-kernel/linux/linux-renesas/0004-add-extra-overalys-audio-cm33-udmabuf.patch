@@ -1,7 +1,7 @@
 From 713c83faf281df2d46edd9053e449a0eb1018657 Mon Sep 17 00:00:00 2001
 From: dtodoroff <d.todorov@vekatech.com>
 Date: Fri, 12 Jan 2024 16:22:28 +0200
-Subject: [PATCH 4/4] add extra overalys (audio, cm33, udmabuf)
+Subject: [PATCH 4/5] add extra overalys (audio, cm33, udmabuf)
 
 
 diff --git a/arch/arm64/boot/dts/renesas/overlays/Makefile b/arch/arm64/boot/dts/renesas/overlays/Makefile
