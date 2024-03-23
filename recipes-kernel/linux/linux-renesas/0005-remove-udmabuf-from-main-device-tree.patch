@@ -1,8 +1,11 @@
-From f3ca8247658baef253b3214697cd29f7b4e3f8e8 Mon Sep 17 00:00:00 2001
+From 29ad8dc220d7fa79ddab4fb5f17118a57e5fd5d8 Mon Sep 17 00:00:00 2001
 From: dtodoroff <d.todorov@vekatech.com>
 Date: Tue, 16 Jan 2024 12:21:47 +0200
-Subject: [PATCH 5/5] remove udmabuf from main device tree
+Subject: [PATCH] remove udmabuf from main device tree
 
+---
+ arch/arm64/boot/dts/renesas/vkrzg2lc.dts | 8 --------
+ 1 file changed, 8 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/renesas/vkrzg2lc.dts b/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
 index cad605970da5..a6538a3b9ff9 100755
@@ -23,6 +26,3 @@ index cad605970da5..a6538a3b9ff9 100755
  	mmngr {
  		compatible = "renesas,mmngr";
  		memory-region = <&mmp_reserved>;
--- 
-2.34.1
-

@@ -10,6 +10,7 @@ SRC_URI_append_vkrzg2lc = " \
 	file://0003-reduce-memory-buffers-for-vkrzg2lc-board.patch \
 	file://0004-add-extra-overalys-audio-cm33-udmabuf.patch \
 	file://0005-remove-udmabuf-from-main-device-tree.patch \
+	file://0006-workaround-EE00700-artifacts.patch \
 "
 
 KBUILD_DEFCONFIG = "defconfig"
@@ -37,7 +38,7 @@ SRC_URI += " \
 	file://USB_ACM.cfg \
 "
 
-SRC_URI += " ${@oe.utils.conditional("CONFIG_HASSI", "1", " file://docker.cfg file://apparmor.cfg ", "", d)} " 
+SRC_URI += " ${@oe.utils.conditional("CONFIG_HASSI", "1", " file://docker.cfg file://apparmor.cfg ", "", d)} "
 
 # support to build dtbo
 KERNEL_DTC_FLAGS = "-@"
@@ -60,3 +61,12 @@ do_deploy_append(){
    install -d ${DEPLOYDIR}/overlays
    cp ${B}/arch/arm64/boot/dts/renesas/overlays/* ${DEPLOYDIR}/overlays
 }
+
+do_recompile_dtb() {
+    if [ -n "${KERNEL_DTC_FLAGS}" ]; then
+       export DTC_FLAGS="${KERNEL_DTC_FLAGS}"
+    fi
+    cd ${B}
+    oe_runmake renesas/vkrzg2lc.dtb
+}
+
