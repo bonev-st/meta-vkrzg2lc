@@ -61,12 +61,12 @@ SSTATE_DIR ?= "${TOPDIR}/sstate-cache"
 #
 # The distribution setting controls which policy settings are used as defaults.
 # The default value is fine for general Yocto project use, at least initially.
-# Ultimately when creating custom policy, people will likely end up subclassing 
+# Ultimately when creating custom policy, people will likely end up subclassing
 # these defaults.
 #
 DISTRO ?= "poky"
 # As an example of a subclass there is a "bleeding" edge policy configuration
-# where many versions are set to the absolute latest code from the upstream 
+# where many versions are set to the absolute latest code from the upstream
 # source control systems. This is just mentioned here as an example, its not
 # useful to most new users.
 # DISTRO ?= "poky-bleeding"
@@ -83,7 +83,7 @@ DISTRO ?= "poky"
 #  - 'package_rpm' for rpm style packages
 # E.g.: PACKAGE_CLASSES ?= "package_rpm package_deb package_ipk"
 # We default to rpm:
-PACKAGE_CLASSES ?= "package_rpm"
+PACKAGE_CLASSES ?= "package_rpm package_deb"
 
 #
 # SDK target architecture
@@ -118,9 +118,9 @@ PACKAGE_CLASSES ?= "package_rpm"
 # There are other application targets that can be used here too, see
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more details.
 # We default to enabling the debugging tweaks.
-EXTRA_IMAGE_FEATURES ?= "debug-tweaks"
-IMAGE_INSTALL_append +="openssh"
-IMAGE_FEATURES_remove += "ssh-server-dropbear"
+EXTRA_IMAGE_FEATURES ?= "debug-tweaks tools-debug"
+#IMAGE_INSTALL_append = " openssh"
+#IMAGE_FEATURES_remove = "ssh-server-dropbear"
 
 #
 # Additional image features
@@ -260,13 +260,17 @@ DISTRO_FEATURES_append = " pam"
 # Enable wayland and disable x11
 DISTRO_FEATURES_append = " wayland"
 DISTRO_FEATURES_remove = " x11"
+DISTRO_FEATURES_NATIVESDK_append = " wayland"
+DISTRO_FEATURES_NATIVESDK_remove = " x11"
 
-# Add qt5 demonstration to core-image-qt or not
-#QT_DEMO = "1"
+USE_RENESAS_GLES = "1"
+
+# Adding qt demonstration to core-image-qt or not
+QT_DEMO = "1"
 
 # Select CIP Core packages by switching betwwen Buster and Bullseye.
-#  - Buster (default)  : build all supported Debian 10 Buster recipes
-#  - Bullseye          : build all supported Debian 11 Bullseye recipes
+#  - Buster (default)   : build all supported Debian 10 Buster recipes
+#  - Bullseye           : build all supported Debian 11 Bullseye recipes
 #  - Not set (or different with above): not use CIP Core, use default packages version in Yocto
 
 CIP_MODE = "Buster"
@@ -285,11 +289,35 @@ MULTILIBS = "multilib:lib32"
 DEFAULTTUNE_virtclass-multilib-lib32 = "armv7vethf-neon-vfpv4"
 USE_32BIT_PKGS = "1"
 
-# Configuration for Docker
-#MACHINE_FEATURES_append = " docker"
+IMAGE_INSTALL_append = " \
+	python3-pip \
+	python3-smbus \
+	python3-spidev \
+	python3-pyserial \
+	python3-pyusb \
+"
 
-# For meta-virtualization layer
-DISTRO_FEATURES_append = "${@oe.utils.conditional('VIRTUALIZATION_CHECK', 'True', ' virtualization', '', d)}"
+IMAGE_INSTALL_append = " \
+	python3-opencv \
+	opencv-samples \
+"
+
+IMAGE_INSTALL_append = " \
+	python3-evdev \
+	evtest \
+"
+
+IMAGE_INSTALL_append = " \
+	devmem2 \
+"
+
+#IMAGE_INSTALL_append = " \
+#	docker \
+#"
+
+# Options are full or minimal
+#SDK_EXT_TYPE ?= "full"
+#SDK_INCLUDE_TOOLCHAIN ?= "${@'1' if d.getVar('SDK_EXT_TYPE') == 'full' else '0'}"
 
 # Generate compressed "git2_" gz of all git packages in DL_DIR
 BB_GENERATE_MIRROR_TARBALLS = "1"
@@ -304,8 +332,8 @@ BB_GIT_SHALLOW_DEPTH = "1"
 # Remove dnf package which causes high CPU workload
 PACKAGE_INSTALL_remove = " dnf "
 
-# Add kernel configs for Home assistant 
-CONFIG_HASSI = "0" 
+# Add kernel configs for Home assistant
+CONFIG_HASSI = "0"
 
 # Support WIC images with default wks from WKS_DEFAULT_FILE
 # Reupdate WKS_DEFAULT_FILE if want to support another wks file.
