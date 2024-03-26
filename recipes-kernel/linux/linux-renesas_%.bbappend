@@ -13,10 +13,9 @@ SRC_URI_append_vkrzg2lc = " \
 	file://0006-workaround-EE00700-artifacts.patch \
 "
 
+#KBUILD_DEFCONFIG = "vkrzg2lc_defconfig"
 KBUILD_DEFCONFIG = "defconfig"
 KCONFIG_MODE = "alldefconfig"
-
-KBUILD_DEFCONFIG = "defconfig"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/Kconfigs:"
 
