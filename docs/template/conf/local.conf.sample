@@ -298,7 +298,7 @@ IMAGE_INSTALL_append = " \
 
 IMAGE_INSTALL_append = " \
 	iw \
-	iw 	wpa-supplicant \
+	wpa-supplicant \
 	bluez5 \
 "
 
