@@ -1,20 +1,4 @@
-#
-# This file is your local configuration file and is where all local user settings
-# are placed. The comments in this file give some guide to the options a new user
-# to the system might want to change but pretty much any configuration option can
-# be set in this file. More adventurous users can look at local.conf.extended
-# which contains other examples of configuration which can be placed in this file
-# but new users likely won't need any of them initially.
-#
-# Lines starting with the '#' character are commented out and in some cases the
-# default values are provided as comments to show people example syntax. Enabling
-# the option is a question of removing the # character and making any change to the
-# variable as required.
-
-#
-# Machine Selection
-#
-MACHINE ?= "vkrzg2lc"
+MACHINE ??= "vkrzg2lc"
 #
 # Where to place downloads
 #
@@ -26,7 +10,7 @@ MACHINE ?= "vkrzg2lc"
 #
 # The default is a downloads directory under TOPDIR which is the build directory.
 #
-DL_DIR ?= "${TOPDIR}/downloads"
+DL_DIR ?= "${TOPDIR}/../../downloads"
 
 #
 # Where to place shared-state files
@@ -42,7 +26,7 @@ DL_DIR ?= "${TOPDIR}/downloads"
 #
 # The default is a sstate-cache directory under TOPDIR.
 #
-SSTATE_DIR ?= "${TOPDIR}/sstate-cache"
+SSTATE_DIR ?= "${TOPDIR}/../../sstate-cache"
 
 #
 # Where to place the build output
@@ -282,6 +266,7 @@ LICENSE_FLAGS_WHITELIST = " \
 	commercial_gst-plugins-bad commercial_faad2 commercial_faac \
 	commercial_gstreamer1.0-libav commercial_ffmpeg commercial_x264 \
 "
+#VIRTUALIZATION_CHECK = "True"
 
 # Enable multilib to support 32-bits applications.
 require conf/multilib.conf
@@ -311,6 +296,12 @@ IMAGE_INSTALL_append = " \
 	devmem2 \
 "
 
+IMAGE_INSTALL_append = " \
+	iw \
+	iw 	wpa-supplicant \
+	bluez5 \
+"
+
 #IMAGE_INSTALL_append = " \
 #	docker \
 #"
@@ -318,6 +309,12 @@ IMAGE_INSTALL_append = " \
 # Options are full or minimal
 #SDK_EXT_TYPE ?= "full"
 #SDK_INCLUDE_TOOLCHAIN ?= "${@'1' if d.getVar('SDK_EXT_TYPE') == 'full' else '0'}"
+
+# Comment out a following line to enable the Docker Engine.
+DISTRO_FEATURES_remove = " docker"
+
+# For meta-virtualization layer
+DISTRO_FEATURES_append = "${@oe.utils.conditional('VIRTUALIZATION_CHECK', 'True', ' virtualization', '', d)}"
 
 # Generate compressed "git2_" gz of all git packages in DL_DIR
 BB_GENERATE_MIRROR_TARBALLS = "1"
@@ -338,9 +335,6 @@ CONFIG_HASSI = "0"
 # Support WIC images with default wks from WKS_DEFAULT_FILE
 # Reupdate WKS_DEFAULT_FILE if want to support another wks file.
 WKS_SUPPORT ?= "1"
-# Defines additional free disk space created in the image in Kbytes.
-IMAGE_ROOTFS_EXTRA_SPACE = "1048576"
-
 CONFIG_WKS_eMMC = "0"
 
 # Generate spdx files
@@ -364,3 +358,4 @@ CONFIG_WKS_eMMC = "0"
 
 BB_NO_NETWORK = "0"
 
+MACHINE_EXTRA_RDEPENDS += " linux-firmware"
