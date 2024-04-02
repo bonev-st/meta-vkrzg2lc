@@ -332,9 +332,9 @@ PACKAGE_INSTALL_remove = " dnf "
 # Add kernel configs for Home assistant
 CONFIG_HASSI = "0"
 
-# Support WIC images with default wks from WKS_DEFAULT_FILE
-# Reupdate WKS_DEFAULT_FILE if want to support another wks file.
-WKS_SUPPORT ?= "1"
+# Media type image
+# "0" - sd card
+# "0" - emmc embedded storage
 CONFIG_WKS_eMMC = "0"
 
 # Generate spdx files
