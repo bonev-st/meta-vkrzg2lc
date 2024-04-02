@@ -97,7 +97,7 @@ index 555dddc6134d..42d105c5b29c 100755
 @@ -568,6 +568,16 @@ gt911: gt911_ts@14 {
  		irq-gpios = <&pinctrl RZG2L_GPIO(43, 1) GPIO_ACTIVE_HIGH>;   /* DSI_TS_nINT */
  	};
- 
+
 +	mxt1066t2: mxt1066t2_ts@4a {
 +		compatible = "atmel,maxtouch";
 +		reg = <0x4a>;
@@ -105,11 +105,11 @@ index 555dddc6134d..42d105c5b29c 100755
 +		status = "disabled";
 +
 +		interrupt-parent = <&pinctrl>;
-+		interrupts = <RZG2L_GPIO(43, 1) IRQ_TYPE_EDGE_FALLING>;
++		interrupts = <RZG2L_GPIO(43, 1) IRQ_TYPE_LEVEL_LOW>;
 +		irq-gpios = <&pinctrl RZG2L_GPIO(43, 1) GPIO_ACTIVE_HIGH>;   /* DSI_TS_nINT */
 +	};
  };
- 
+
  &ssi0 {
 diff --git a/arch/arm64/configs/vkrzg2lc_defconfig b/arch/arm64/configs/vkrzg2lc_defconfig
 index 1c4b37178931..95402943e883 100644
