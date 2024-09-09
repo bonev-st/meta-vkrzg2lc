@@ -1,4 +1,4 @@
-From b9432685a93c583cc3c29708414dca9198783886 Mon Sep 17 00:00:00 2001
+From a513ff645e72d0a06eb2d9de366661da799359c0 Mon Sep 17 00:00:00 2001
 From: dtodoroff <d.todorov@vekatech.com>
 Date: Wed, 22 Nov 2023 11:15:40 +0200
 Subject: [PATCH] add vkrzg2lc board support
@@ -1994,6 +1994,3 @@ index 0000000000..20095b3ce6
 +#define   VEKATECH_UENV_FDTO_SUPPORT
 +
 +#endif  /* __VKRZG2LC_FDT_OVERLAY_H */
--- 
-2.34.1
-

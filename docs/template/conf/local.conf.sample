@@ -1,20 +1,4 @@
-#
-# This file is your local configuration file and is where all local user settings
-# are placed. The comments in this file give some guide to the options a new user
-# to the system might want to change but pretty much any configuration option can
-# be set in this file. More adventurous users can look at local.conf.extended
-# which contains other examples of configuration which can be placed in this file
-# but new users likely won't need any of them initially.
-#
-# Lines starting with the '#' character are commented out and in some cases the
-# default values are provided as comments to show people example syntax. Enabling
-# the option is a question of removing the # character and making any change to the
-# variable as required.
-
-#
-# Machine Selection
-#
-MACHINE ?= "vkrzg2lc"
+MACHINE ??= "vkrzg2lc"
 #
 # Where to place downloads
 #
@@ -26,7 +10,7 @@ MACHINE ?= "vkrzg2lc"
 #
 # The default is a downloads directory under TOPDIR which is the build directory.
 #
-DL_DIR ?= "${TOPDIR}/downloads"
+DL_DIR ?= "${TOPDIR}/../../downloads"
 
 #
 # Where to place shared-state files
@@ -42,7 +26,7 @@ DL_DIR ?= "${TOPDIR}/downloads"
 #
 # The default is a sstate-cache directory under TOPDIR.
 #
-SSTATE_DIR ?= "${TOPDIR}/sstate-cache"
+SSTATE_DIR ?= "${TOPDIR}/../../sstate-cache"
 
 #
 # Where to place the build output
@@ -61,12 +45,12 @@ SSTATE_DIR ?= "${TOPDIR}/sstate-cache"
 #
 # The distribution setting controls which policy settings are used as defaults.
 # The default value is fine for general Yocto project use, at least initially.
-# Ultimately when creating custom policy, people will likely end up subclassing 
+# Ultimately when creating custom policy, people will likely end up subclassing
 # these defaults.
 #
 DISTRO ?= "poky"
 # As an example of a subclass there is a "bleeding" edge policy configuration
-# where many versions are set to the absolute latest code from the upstream 
+# where many versions are set to the absolute latest code from the upstream
 # source control systems. This is just mentioned here as an example, its not
 # useful to most new users.
 # DISTRO ?= "poky-bleeding"
@@ -83,7 +67,7 @@ DISTRO ?= "poky"
 #  - 'package_rpm' for rpm style packages
 # E.g.: PACKAGE_CLASSES ?= "package_rpm package_deb package_ipk"
 # We default to rpm:
-PACKAGE_CLASSES ?= "package_rpm"
+PACKAGE_CLASSES ?= "package_rpm package_deb"
 
 #
 # SDK target architecture
@@ -118,9 +102,9 @@ PACKAGE_CLASSES ?= "package_rpm"
 # There are other application targets that can be used here too, see
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more details.
 # We default to enabling the debugging tweaks.
-EXTRA_IMAGE_FEATURES ?= "debug-tweaks"
-IMAGE_INSTALL_append +="openssh"
-IMAGE_FEATURES_remove += "ssh-server-dropbear"
+EXTRA_IMAGE_FEATURES ?= "debug-tweaks tools-debug"
+#IMAGE_INSTALL_append = " openssh"
+#IMAGE_FEATURES_remove = "ssh-server-dropbear"
 
 #
 # Additional image features
@@ -260,13 +244,17 @@ DISTRO_FEATURES_append = " pam"
 # Enable wayland and disable x11
 DISTRO_FEATURES_append = " wayland"
 DISTRO_FEATURES_remove = " x11"
+DISTRO_FEATURES_NATIVESDK_append = " wayland"
+DISTRO_FEATURES_NATIVESDK_remove = " x11"
 
-# Add qt5 demonstration to core-image-qt or not
-#QT_DEMO = "1"
+USE_RENESAS_GLES = "1"
+
+# Adding qt demonstration to core-image-qt or not
+QT_DEMO = "1"
 
 # Select CIP Core packages by switching betwwen Buster and Bullseye.
-#  - Buster (default)  : build all supported Debian 10 Buster recipes
-#  - Bullseye          : build all supported Debian 11 Bullseye recipes
+#  - Buster (default)   : build all supported Debian 10 Buster recipes
+#  - Bullseye           : build all supported Debian 11 Bullseye recipes
 #  - Not set (or different with above): not use CIP Core, use default packages version in Yocto
 
 CIP_MODE = "Buster"
@@ -278,6 +266,7 @@ LICENSE_FLAGS_WHITELIST = " \
 	commercial_gst-plugins-bad commercial_faad2 commercial_faac \
 	commercial_gstreamer1.0-libav commercial_ffmpeg commercial_x264 \
 "
+#VIRTUALIZATION_CHECK = "True"
 
 # Enable multilib to support 32-bits applications.
 require conf/multilib.conf
@@ -285,8 +274,44 @@ MULTILIBS = "multilib:lib32"
 DEFAULTTUNE_virtclass-multilib-lib32 = "armv7vethf-neon-vfpv4"
 USE_32BIT_PKGS = "1"
 
-# Configuration for Docker
-#MACHINE_FEATURES_append = " docker"
+IMAGE_INSTALL_append = " \
+	python3-pip \
+	python3-smbus \
+	python3-spidev \
+	python3-pyserial \
+	python3-pyusb \
+"
+
+IMAGE_INSTALL_append = " \
+	python3-opencv \
+	opencv-samples \
+"
+
+IMAGE_INSTALL_append = " \
+	python3-evdev \
+	evtest \
+"
+
+IMAGE_INSTALL_append = " \
+	devmem2 \
+"
+
+IMAGE_INSTALL_append = " \
+	iw \
+	wpa-supplicant \
+	bluez5 \
+"
+
+#IMAGE_INSTALL_append = " \
+#	docker \
+#"
+
+# Options are full or minimal
+#SDK_EXT_TYPE ?= "full"
+#SDK_INCLUDE_TOOLCHAIN ?= "${@'1' if d.getVar('SDK_EXT_TYPE') == 'full' else '0'}"
+
+# Comment out a following line to enable the Docker Engine.
+DISTRO_FEATURES_remove = " docker"
 
 # For meta-virtualization layer
 DISTRO_FEATURES_append = "${@oe.utils.conditional('VIRTUALIZATION_CHECK', 'True', ' virtualization', '', d)}"
@@ -304,15 +329,12 @@ BB_GIT_SHALLOW_DEPTH = "1"
 # Remove dnf package which causes high CPU workload
 PACKAGE_INSTALL_remove = " dnf "
 
-# Add kernel configs for Home assistant 
-CONFIG_HASSI = "0" 
+# Add kernel configs for Home assistant
+CONFIG_HASSI = "0"
 
-# Support WIC images with default wks from WKS_DEFAULT_FILE
-# Reupdate WKS_DEFAULT_FILE if want to support another wks file.
-WKS_SUPPORT ?= "1"
-# Defines additional free disk space created in the image in Kbytes.
-IMAGE_ROOTFS_EXTRA_SPACE = "1048576"
-
+# Media type image
+# "0" - sd card
+# "0" - emmc embedded storage
 CONFIG_WKS_eMMC = "0"
 
 # Generate spdx files
@@ -336,3 +358,4 @@ CONFIG_WKS_eMMC = "0"
 
 BB_NO_NETWORK = "0"
 
+MACHINE_EXTRA_RDEPENDS += " linux-firmware"

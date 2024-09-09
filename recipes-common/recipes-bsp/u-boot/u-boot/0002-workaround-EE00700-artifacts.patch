@@ -1,0 +1,68 @@
+From 10d5964b7fb844d5121f13f69ca8db9becb85d4f Mon Sep 17 00:00:00 2001
+From: Stanimir Bonev <stanimir@x-cas.eu>
+Date: Sat, 23 Mar 2024 23:28:53 +0200
+Subject: [PATCH] workaround EE00700 artifacts
+
+---
+ board/renesas/vkrzg2lc/vkrzg2lc.c | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/board/renesas/vkrzg2lc/vkrzg2lc.c b/board/renesas/vkrzg2lc/vkrzg2lc.c
+index 1d6b4e0669..9e4c882822 100644
+--- a/board/renesas/vkrzg2lc/vkrzg2lc.c
++++ b/board/renesas/vkrzg2lc/vkrzg2lc.c
+@@ -26,6 +26,7 @@
+ #include <wdt.h>
+ #include <rzg2l_wdt.h>
+ #include "pfc_regs.h"
++#include <linux/delay.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -74,6 +75,8 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define PORT_USB1_VBUSEN    P( 42, 0)
+ #define PORT_USB1_OVRCUR    P( 42, 1)
+ 
++#define PORT_PANEL_RST      P(  4, 1)
++#define PORT_PANEL_RST1     P( 22, 1)
+ 
+ /* WDT */
+ #define WDT_INDEX       0
+@@ -164,7 +167,7 @@ void s_init(void)
+ }
+ 
+ 
+-int board_led_init(void)
++static int board_led_init(void)
+ {
+     /* RED LED: P8_2 = 1; */
+     pfc_set_gpio(PORT_LED_R, GPIO_OUT); gpio_set(PORT_LED_R, 0);
+@@ -172,6 +175,19 @@ int board_led_init(void)
+     return 0;
+ }
+ 
++// workaround for EE00700 artifacts
++static void board_panel_init(void)
++{
++	pfc_set_gpio(PORT_PANEL_RST, GPIO_OUT);
++	pfc_set_gpio(PORT_PANEL_RST1, GPIO_OUT);
++
++	gpio_set(PORT_PANEL_RST, 0);
++	gpio_set(PORT_PANEL_RST1, 0);
++	mdelay(5);
++	gpio_set(PORT_PANEL_RST, 1);
++	gpio_set(PORT_PANEL_RST1, 1);
++}
++
+ int board_early_init_f(void)
+ {
+     /* LED's */
+@@ -179,6 +195,8 @@ int board_early_init_f(void)
+ 
+     //gpio_set(PORT_LED_R, 1);
+ 
++	board_panel_init();
++
+     return 0;
+ }
+ 

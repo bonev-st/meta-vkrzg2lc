@@ -1,8 +1,52 @@
-From a40ec37ab472d6e2fcbc61a23b032482f6e576c7 Mon Sep 17 00:00:00 2001
+From c41cfe7cbc8dbd418f1ff797049381b4730e64e3 Mon Sep 17 00:00:00 2001
 From: dtodoroff <d.todorov@vekatech.com>
 Date: Thu, 16 Nov 2023 10:20:02 +0200
-Subject: [PATCH 1/5] add vkrzg2lc board support
+Subject: [PATCH] add vkrzg2lc board support
 
+---
+ .../display/panel/fitipower,ek79007ad.yaml    |  53 ++
+ Makefile                                      |   5 +-
+ arch/arm64/boot/dts/renesas/Makefile          |   4 +
+ arch/arm64/boot/dts/renesas/overlays/Makefile |  17 +
+ .../boot/dts/renesas/overlays/vkrz-can.dts    |  43 +
+ .../boot/dts/renesas/overlays/vkrz-imx219.dts |  29 +
+ .../dts/renesas/overlays/vkrz-io-i2c2.dts     |  34 +
+ .../dts/renesas/overlays/vkrz-io-i2c3.dts     |  33 +
+ .../dts/renesas/overlays/vkrz-io-pwm0.dts     |  33 +
+ .../dts/renesas/overlays/vkrz-io-pwm1.dts     |  34 +
+ .../dts/renesas/overlays/vkrz-io-scfi1.dts    |  32 +
+ .../overlays/vkrz-io-scfi1_rst_cts.dts        |  35 +
+ .../dts/renesas/overlays/vkrz-io-scfi3.dts    |  32 +
+ .../dts/renesas/overlays/vkrz-io-spi1.dts     |  34 +
+ .../renesas/overlays/vkrz-mipi_av_disp2.dts   |  64 ++
+ .../renesas/overlays/vkrz-mipi_vklcd07.dts    |  65 ++
+ arch/arm64/boot/dts/renesas/vkrzg2lc.dts      | 769 ++++++++++++++++++
+ arch/arm64/configs/vkrzg2lc_defconfig         | 500 ++++++++++++
+ drivers/gpu/drm/panel/Kconfig                 |  12 +-
+ drivers/gpu/drm/panel/Makefile                |   1 +
+ .../gpu/drm/panel/panel-fitipower-ek79007ad.c | 334 ++++++++
+ drivers/gpu/drm/panel/panel-ilitek-ili9881c.c | 291 ++++++-
+ drivers/mtd/spi-nor/macronix.c                |   2 +-
+ drivers/net/phy/realtek.c                     |   6 +
+ scripts/Makefile.lib                          |  10 +
+ 25 files changed, 2467 insertions(+), 5 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/display/panel/fitipower,ek79007ad.yaml
+ create mode 100644 arch/arm64/boot/dts/renesas/overlays/Makefile
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-can.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-imx219.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-io-i2c2.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-io-i2c3.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-io-pwm0.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-io-pwm1.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-io-scfi1.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-io-scfi1_rst_cts.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-io-scfi3.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-io-spi1.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-mipi_av_disp2.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-mipi_vklcd07.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/vkrzg2lc.dts
+ create mode 100644 arch/arm64/configs/vkrzg2lc_defconfig
+ create mode 100644 drivers/gpu/drm/panel/panel-fitipower-ek79007ad.c
 
 diff --git a/Documentation/devicetree/bindings/display/panel/fitipower,ek79007ad.yaml b/Documentation/devicetree/bindings/display/panel/fitipower,ek79007ad.yaml
 new file mode 100644
@@ -70,7 +114,7 @@ index 3450b061e8d6..8c05bb70deeb 100644
 @@ -1382,6 +1382,9 @@ ifneq ($(dtstree),)
  %.dtb: include/config/kernel.release scripts_dtc
  	$(Q)$(MAKE) $(build)=$(dtstree) $(dtstree)/$@
- 
+
 +%.dtbo: include/config/kernel.release scripts_dtc
 +	$(Q)$(MAKE) $(build)=$(dtstree) $(dtstree)/$@
 +
@@ -91,7 +135,7 @@ index 30b88d5fc63a..529c3008a90c 100644
 --- a/arch/arm64/boot/dts/renesas/Makefile
 +++ b/arch/arm64/boot/dts/renesas/Makefile
 @@ -97,3 +97,7 @@ dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g054l2-dev.dtb
- 
+
  dtb-$(CONFIG_ARCH_R9A09G011) += r9a09g011-v2mevk2.dtb
  dtb-$(CONFIG_ARCH_R9A09G055) += r9a09g055-v2maevk2.dtb
 +
@@ -1235,7 +1279,7 @@ index 000000000000..555dddc6134d
 +		status = "disabled";
 +
 +		interrupt-parent = <&pinctrl>;
-+		interrupts = <RZG2L_GPIO(43, 1) IRQ_TYPE_EDGE_FALLING>;
++		interrupts = <RZG2L_GPIO(43, 1) IRQ_TYPE_LEVEL_LOW>;
 +		irq-gpios = <&pinctrl RZG2L_GPIO(43, 1) GPIO_ACTIVE_HIGH>;   /* DSI_TS_nINT */
 +	};
 +
@@ -1951,7 +1995,7 @@ index 6153972e0127..785feb502969 100644
 @@ -97,7 +97,16 @@ config DRM_PANEL_FEIYANG_FY07024DI26A30D
  	  Say Y if you want to enable support for panels based on the
  	  Feiyang FY07024DI26A30-D MIPI-DSI interface.
- 
+
 -config DRM_PANEL_ILITEK_IL9322
 +config DRM_PANEL_FITIPOWER_EK79007AD
 +	tristate "Fitipower EK79007AD-based panels"
@@ -2328,16 +2372,16 @@ index 534dd7414d42..a29896a17547 100644
 @@ -3,6 +3,8 @@
   * Copyright (C) 2017-2018, Bootlin
   */
- 
+
 +//#define DEBUG
 +
  #include <linux/delay.h>
  #include <linux/device.h>
  #include <linux/err.h>
 @@ -21,6 +23,8 @@
- 
+
  #include <video/mipi_display.h>
- 
+
 +// #define CONFIG_SELFTEST_MODE
 +
  enum ili9881c_op {
@@ -2345,16 +2389,16 @@ index 534dd7414d42..a29896a17547 100644
  	ILI9881C_COMMAND,
 @@ -50,6 +54,7 @@ struct ili9881c {
  	const struct ili9881c_desc	*desc;
- 
+
  	struct regulator	*power;
 +	struct gpio_desc	*enable_gpio;
  	struct gpio_desc	*reset;
  };
- 
+
 @@ -453,6 +458,215 @@ static const struct ili9881c_instr k101_im2byl02_init[] = {
  	ILI9881C_COMMAND_INSTR(0xD3, 0x3F), /* VN0 */
  };
- 
+
 +/* support new panel PH720128T005ZBC */
 +static const struct ili9881c_instr ili9881c_init_ph720128t005[] = {
 +	ILI9881C_SWITCH_PAGE_INSTR(3),
@@ -2570,7 +2614,7 @@ index 534dd7414d42..a29896a17547 100644
 @@ -493,6 +707,32 @@ static int ili9881c_send_cmd_data(struct ili9881c *ctx, u8 cmd, u8 data)
  	return 0;
  }
- 
+
 +static int ili9881c_read_cmd_data(struct ili9881c *tftcp, u8 cmd)
 +{
 +	u8 buf = 0;
@@ -2603,16 +2647,16 @@ index 534dd7414d42..a29896a17547 100644
 @@ -512,6 +752,8 @@ static int ili9881c_prepare(struct drm_panel *panel)
  	gpiod_set_value(ctx->reset, 0);
  	msleep(20);
- 
+
 +	ili9881c_getID(ctx);
 +
  	for (i = 0; i < ctx->desc->init_length; i++) {
  		const struct ili9881c_instr *instr = &ctx->desc->init[i];
- 
+
 @@ -603,6 +845,23 @@ static const struct drm_display_mode k101_im2byl02_default_mode = {
  	.height_mm	= 217,
  };
- 
+
 +static const struct drm_display_mode ph720128t005_default_mode = {
 +	.clock		= 48000,
 +
@@ -2636,17 +2680,17 @@ index 534dd7414d42..a29896a17547 100644
 @@ -649,6 +908,9 @@ static int ili9881c_dsi_probe(struct mipi_dsi_device *dsi)
  	ctx->dsi = dsi;
  	ctx->desc = of_device_get_match_data(&dsi->dev);
- 
+
 +	if(ili9881c_init_ph720128t005 == ctx->desc->init) {
 +		dev_notice(&dsi->dev, "Found Avnet 720128t005 display\n");
 +	}
  	drm_panel_init(&ctx->panel, &dsi->dev, &ili9881c_funcs,
  		       DRM_MODE_CONNECTOR_DSI);
- 
+
 @@ -658,21 +920,39 @@ static int ili9881c_dsi_probe(struct mipi_dsi_device *dsi)
  		return PTR_ERR(ctx->power);
  	}
- 
+
 +    /* The enable GPIO is optional, this pin is MIPI DSI/HDMI switch select input. */
 +    ctx->enable_gpio = devm_gpiod_get_optional(&dsi->dev, "switch", GPIOD_OUT_HIGH);
 +    if (IS_ERR_OR_NULL(ctx->enable_gpio)) {
@@ -2667,28 +2711,28 @@ index 534dd7414d42..a29896a17547 100644
 +	} else {
 +		dev_dbg(&dsi->dev, "dsi-lanes = %d\n", dsi->lanes);
 +	}
- 
+
  	ret = drm_panel_of_backlight(&ctx->panel);
 -	if (ret)
 +	if (ret) {
 +		dev_err(&dsi->dev, "Couldn't get our backlight(%d)\n", ret);
  		return ret;
 +	}
- 
+
  	drm_panel_add(&ctx->panel);
- 
+
 +	/* non-burst mode with sync pulse */
  	dsi->mode_flags = MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
 +
  	dsi->format = MIPI_DSI_FMT_RGB888;
 -	dsi->lanes = 4;
- 
+
  	return mipi_dsi_attach(dsi);
  }
 @@ -699,9 +979,16 @@ static const struct ili9881c_desc k101_im2byl02_desc = {
  	.mode = &k101_im2byl02_default_mode,
  };
- 
+
 +static const struct ili9881c_desc ph720128t005_desc = {
 +	.init = ili9881c_init_ph720128t005,
 +	.init_length = ARRAY_SIZE(ili9881c_init_ph720128t005),
@@ -2722,23 +2766,23 @@ index b4879306bb8a..ff1e933b411e 100644
 @@ -29,6 +29,9 @@
  #define RTL8211F_PHYCR1				0x18
  #define RTL8211F_INSR				0x1d
- 
+
 +#define RTL8211F_LED_CRTL			0x10
 +#define RTL8211F_EEE				0x11
 +
  #define RTL8211F_TX_DELAY			BIT(8)
  #define RTL8211F_RX_DELAY			BIT(3)
- 
+
 @@ -185,6 +188,9 @@ static int rtl8211f_config_init(struct phy_device *phydev)
  	u16 val;
  	int ret;
- 
+
 +	phy_write_paged(phydev, 0xd04, RTL8211F_LED_CRTL, 0x617f);
 +	phy_write_paged(phydev, 0xd04, RTL8211F_EEE, 0);
 +
  	val = RTL8211F_ALDPS_ENABLE | RTL8211F_ALDPS_PLL_OFF | RTL8211F_ALDPS_XTAL_OFF;
  	phy_modify_paged_changed(phydev, 0xa43, RTL8211F_PHYCR1, val, val);
- 
+
 diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
 index 94133708889d..82c1faf7f78f 100644
 --- a/scripts/Makefile.lib
@@ -2746,7 +2790,7 @@ index 94133708889d..82c1faf7f78f 100644
 @@ -325,6 +325,16 @@ cmd_dtc = $(HOSTCC) -E $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ;
  $(obj)/%.dtb: $(src)/%.dts $(DTC) FORCE
  	$(call if_changed_dep,dtc)
- 
+
 +quiet_cmd_dtco = DTCO     $@
 +cmd_dtco = $(HOSTCC) -E $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \
 +	$(DTC) -O dtb -o $@ -b 0 \
@@ -2760,6 +2804,3 @@ index 94133708889d..82c1faf7f78f 100644
  DT_CHECKER ?= dt-validate
  DT_BINDING_DIR := Documentation/devicetree/bindings
  # DT_TMP_SCHEMA may be overridden from Documentation/devicetree/bindings/Makefile
--- 
-2.34.1
-

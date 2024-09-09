@@ -1,0 +1,388 @@
+From 97fc86e5c53dc090e3d41525823cf70428796371 Mon Sep 17 00:00:00 2001
+From: OpenEmbedded <oe.patch@oe>
+Date: Mon, 9 Sep 2024 23:16:43 +0300
+Subject: [PATCH] add vklcd-kd070hdfia030 and vklcd-kd101wxfid045 support
+
+Signed-off-by: OpenEmbedded <oe.patch@oe>
+---
+ arch/arm64/boot/dts/renesas/overlays/Makefile |   2 +
+ .../overlays/vkrz-dsi-kd070hdfia030.dts       |  61 ++++++
+ .../overlays/vkrz-dsi-kd101wxfid045.dts       |  61 ++++++
+ arch/arm64/boot/dts/renesas/vkrzg2lc.dts      |  11 ++
+ .../gpu/drm/panel/panel-fitipower-ek79007ad.c | 179 ++++++++++++++++++
+ 5 files changed, 314 insertions(+)
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd070hdfia030.dts
+ create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd101wxfid045.dts
+
+diff --git a/arch/arm64/boot/dts/renesas/overlays/Makefile b/arch/arm64/boot/dts/renesas/overlays/Makefile
+index 1ca4a1510bb6..1c88ac9b846b 100644
+--- a/arch/arm64/boot/dts/renesas/overlays/Makefile
++++ b/arch/arm64/boot/dts/renesas/overlays/Makefile
+@@ -19,3 +19,5 @@ dtb-y += vkrz-exp-scfi3.dtbo
+ dtb-y += vkrz-exp-pwm0.dtbo
+ dtb-y += vkrz-exp-pwm1.dtbo
+ dtb-y += vkrz-udma.dtbo
++dtb-y += vkrz-dsi-kd070hdfia030.dtbo
++dtb-y += vkrz-dsi-kd101wxfid045.dtbo
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd070hdfia030.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd070hdfia030.dts
+new file mode 100755
+index 000000000000..4e4bf7d51fd0
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd070hdfia030.dts
+@@ -0,0 +1,61 @@
++     /*
++ * Copyright 2023 Vekatech
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/pinctrl/rzg2l-pinctrl.h>
++#include <dt-bindings/gpio/gpio.h>
++
++&du {
++	status = "okay";
++};
++
++&dsi0 {
++	status = "okay";
++	ports {
++		port@1 {
++			dsi0_out: endpoint {
++				remote-endpoint = <&panel_in>;
++			};
++		};
++	};
++};
++
++&mipi_panel {
++	status = "okay";
++	compatible = "vekatech,vklcd-kd070hdfia030","fitipower,ek79007ad";
++
++	reset-gpios = <&pinctrl RZG2L_GPIO(22, 1) (GPIO_ACTIVE_LOW|GPIO_OPEN_DRAIN)>;
++	lcd-model = "kd070hdfia030";
++	dsi-lanes = <4>;
++	port {
++		panel_in: endpoint {
++			remote-endpoint = <&dsi0_out>;
++		};
++	};
++};
++
++&gpt3 {
++	status = "okay";
++};
++
++&backlight {
++	status = "okay";
++};
++
++&gt911 {
++	status = "okay";
++	reset-gpios = <&pinctrl RZG2L_GPIO(4, 1) GPIO_ACTIVE_LOW>;
++};
+diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd101wxfid045.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd101wxfid045.dts
+new file mode 100755
+index 000000000000..2b6939a2ae60
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd101wxfid045.dts
+@@ -0,0 +1,61 @@
++     /*
++ * Copyright 2023 Vekatech
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/pinctrl/rzg2l-pinctrl.h>
++#include <dt-bindings/gpio/gpio.h>
++
++&du {
++	status = "okay";
++};
++
++&dsi0 {
++	status = "okay";
++	ports {
++		port@1 {
++			dsi0_out: endpoint {
++				remote-endpoint = <&panel_in>;
++			};
++		};
++	};
++};
++
++&mipi_panel {
++	status = "okay";
++	compatible = "vekatech,vklcd-kd101wxfid045","fitipower,ek79007ad";
++
++	reset-gpios = <&pinctrl RZG2L_GPIO(22, 1) (GPIO_ACTIVE_LOW|GPIO_OPEN_DRAIN)>;
++	lcd-model = "kd101wxfid045";
++	dsi-lanes = <4>;
++	port {
++		panel_in: endpoint {
++			remote-endpoint = <&dsi0_out>;
++		};
++	};
++};
++
++&gpt3 {
++	status = "okay";
++};
++
++&backlight {
++	status = "okay";
++};
++
++&ft5626 {
++	status = "okay";
++	reset-gpios = <&pinctrl RZG2L_GPIO(4, 1) GPIO_ACTIVE_LOW>;
++};
+diff --git a/arch/arm64/boot/dts/renesas/vkrzg2lc.dts b/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
+index 1bcbb8048e20..54c04b1c9a94 100755
+--- a/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
++++ b/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
+@@ -528,6 +528,17 @@ mxt1066t2: mxt1066t2_ts@4a {
+ 		interrupts = <RZG2L_GPIO(43, 1) IRQ_TYPE_LEVEL_LOW>;
+ 		irq-gpios = <&pinctrl RZG2L_GPIO(43, 1) GPIO_ACTIVE_HIGH>;   /* DSI_TS_nINT */
+ 	};
++
++	ft5626: ft5626_ts@3e {
++		compatible = "edt,edt-ft5506";
++		reg = <0x3e>;
++
++		status = "disabled";
++
++		interrupt-parent = <&pinctrl>;
++		interrupts = <RZG2L_GPIO(43, 1) IRQ_TYPE_LEVEL_LOW>;
++		irq-gpios = <&pinctrl RZG2L_GPIO(43, 1) GPIO_ACTIVE_HIGH>;   /* DSI_TS_nINT */
++	};
+ };
+ 
+ &gpt3 {
+diff --git a/drivers/gpu/drm/panel/panel-fitipower-ek79007ad.c b/drivers/gpu/drm/panel/panel-fitipower-ek79007ad.c
+index 5b051912bdf4..313e8fa40e25 100644
+--- a/drivers/gpu/drm/panel/panel-fitipower-ek79007ad.c
++++ b/drivers/gpu/drm/panel/panel-fitipower-ek79007ad.c
+@@ -55,6 +55,137 @@ static const struct ek79007ad_instr ek79007ad_init_vklcd07[] = {
+ 	EK79007AD_COMMAND_INSTR(0xB3, 0x00),
+ };
+ 
++/* support new panel vklcd-kd070hdfia030 (kd070hdfia030) */
++static const struct ek79007ad_instr ek79007ad_init_vklcd_kd070hdfia030[] = {
++	EK79007AD_COMMAND_INSTR(0xB2, 0x40),	// 0x40:4LANE, 0x50: 2LANE
++	EK79007AD_COMMAND_INSTR(0x80, 0x8B),
++	EK79007AD_COMMAND_INSTR(0x81, 0x78),
++	EK79007AD_COMMAND_INSTR(0xB2, 0x40),
++	EK79007AD_COMMAND_INSTR(0xB2, 0x40),
++	EK79007AD_COMMAND_INSTR(0x82, 0x84),
++	EK79007AD_COMMAND_INSTR(0x83, 0x88),
++	EK79007AD_COMMAND_INSTR(0x84, 0xA8),
++	EK79007AD_COMMAND_INSTR(0x85, 0xE3),
++	EK79007AD_COMMAND_INSTR(0x86, 0x88),
++};
++
++/* support new panel vklcd-kd101wxfid045 (kd101wxfid045) */
++static const struct ek79007ad_instr ek79007ad_init_vklcd_kd101wxfid045[] = {
++	EK79007AD_COMMAND_INSTR(0xCD, 0xAA),
++	EK79007AD_COMMAND_INSTR(0x52, 0x13),
++	EK79007AD_COMMAND_INSTR(0x52, 0x13),
++	EK79007AD_COMMAND_INSTR(0x52, 0x13),
++	EK79007AD_COMMAND_INSTR(0x52, 0x13),
++	EK79007AD_COMMAND_INSTR(0x52, 0x13),
++	EK79007AD_COMMAND_INSTR(0x52, 0x13),
++	EK79007AD_COMMAND_INSTR(0x52, 0x12),
++	EK79007AD_COMMAND_INSTR(0x52, 0x13),
++	EK79007AD_COMMAND_INSTR(0x52, 0x10),
++	EK79007AD_COMMAND_INSTR(0x52, 0x11),
++	EK79007AD_COMMAND_INSTR(0x52, 0x04),
++	EK79007AD_COMMAND_INSTR(0x52, 0x05),
++	EK79007AD_COMMAND_INSTR(0x52, 0x06),
++	EK79007AD_COMMAND_INSTR(0x52, 0x07),
++	EK79007AD_COMMAND_INSTR(0x52, 0x08),
++	EK79007AD_COMMAND_INSTR(0x52, 0x09),
++	EK79007AD_COMMAND_INSTR(0x52, 0x0A),
++	EK79007AD_COMMAND_INSTR(0x52, 0x0B),
++	EK79007AD_COMMAND_INSTR(0x52, 0x03),
++	EK79007AD_COMMAND_INSTR(0x52, 0x0C),
++	EK79007AD_COMMAND_INSTR(0x52, 0x13),
++	EK79007AD_COMMAND_INSTR(0x52, 0x13),
++	EK79007AD_COMMAND_INSTR(0x59, 0x03),
++	EK79007AD_COMMAND_INSTR(0x59, 0x13),
++	EK79007AD_COMMAND_INSTR(0x59, 0x13),
++	EK79007AD_COMMAND_INSTR(0x59, 0x13),
++	EK79007AD_COMMAND_INSTR(0x59, 0x13),
++	EK79007AD_COMMAND_INSTR(0x59, 0x13),
++	EK79007AD_COMMAND_INSTR(0x59, 0x13),
++	EK79007AD_COMMAND_INSTR(0x59, 0x12),
++	EK79007AD_COMMAND_INSTR(0x59, 0x13),
++	EK79007AD_COMMAND_INSTR(0x59, 0x10),
++	EK79007AD_COMMAND_INSTR(0x59, 0x11),
++	EK79007AD_COMMAND_INSTR(0x59, 0x04),
++	EK79007AD_COMMAND_INSTR(0x59, 0x05),
++	EK79007AD_COMMAND_INSTR(0x59, 0x06),
++	EK79007AD_COMMAND_INSTR(0x59, 0x07),
++	EK79007AD_COMMAND_INSTR(0x59, 0x08),
++	EK79007AD_COMMAND_INSTR(0x59, 0x09),
++	EK79007AD_COMMAND_INSTR(0x59, 0x0A),
++	EK79007AD_COMMAND_INSTR(0x59, 0x0B),
++	EK79007AD_COMMAND_INSTR(0x59, 0x03),
++	EK79007AD_COMMAND_INSTR(0x59, 0x0C),
++	EK79007AD_COMMAND_INSTR(0x59, 0x13),
++	EK79007AD_COMMAND_INSTR(0x59, 0x13),
++	EK79007AD_COMMAND_INSTR(0x32, 0x02),
++	EK79007AD_COMMAND_INSTR(0x34, 0x7E),
++	EK79007AD_COMMAND_INSTR(0x5F, 0x38),
++	EK79007AD_COMMAND_INSTR(0x2B, 0x20),
++	EK79007AD_COMMAND_INSTR(0x35, 0x05),
++	EK79007AD_COMMAND_INSTR(0x33, 0x08),
++	EK79007AD_COMMAND_INSTR(0x51, 0x80),
++	EK79007AD_COMMAND_INSTR(0x73, 0xF0),
++	EK79007AD_COMMAND_INSTR(0x74, 0x91),
++	EK79007AD_COMMAND_INSTR(0x75, 0x03),
++	EK79007AD_COMMAND_INSTR(0x71, 0xE3),
++	EK79007AD_COMMAND_INSTR(0x7A, 0x17),
++	EK79007AD_COMMAND_INSTR(0x3C, 0x40),
++	EK79007AD_COMMAND_INSTR(0x4A, 0x02),
++	EK79007AD_COMMAND_INSTR(0x18, 0xFF),
++	EK79007AD_COMMAND_INSTR(0x19, 0x1F),
++	EK79007AD_COMMAND_INSTR(0x1A, 0xDC),
++	EK79007AD_COMMAND_INSTR(0x4E, 0x4A),
++	EK79007AD_COMMAND_INSTR(0x4F, 0x4C),
++	EK79007AD_COMMAND_INSTR(0x53, 0x37),
++	EK79007AD_COMMAND_INSTR(0x53, 0x2A),
++	EK79007AD_COMMAND_INSTR(0x53, 0x29),
++	EK79007AD_COMMAND_INSTR(0x53, 0x2A),
++	EK79007AD_COMMAND_INSTR(0x53, 0x2E),
++	EK79007AD_COMMAND_INSTR(0x53, 0x2F),
++	EK79007AD_COMMAND_INSTR(0x53, 0x22),
++	EK79007AD_COMMAND_INSTR(0x53, 0x0D),
++	EK79007AD_COMMAND_INSTR(0x53, 0x0E),
++	EK79007AD_COMMAND_INSTR(0x53, 0x0C),
++	EK79007AD_COMMAND_INSTR(0x53, 0x0E),
++	EK79007AD_COMMAND_INSTR(0x53, 0x0F),
++	EK79007AD_COMMAND_INSTR(0x53, 0x10),
++	EK79007AD_COMMAND_INSTR(0x54, 0x37),
++	EK79007AD_COMMAND_INSTR(0x54, 0x2A),
++	EK79007AD_COMMAND_INSTR(0x54, 0x29),
++	EK79007AD_COMMAND_INSTR(0x54, 0x2A),
++	EK79007AD_COMMAND_INSTR(0x54, 0x2E),
++	EK79007AD_COMMAND_INSTR(0x54, 0x2F),
++	EK79007AD_COMMAND_INSTR(0x54, 0x22),
++	EK79007AD_COMMAND_INSTR(0x54, 0x0D),
++	EK79007AD_COMMAND_INSTR(0x54, 0x0E),
++	EK79007AD_COMMAND_INSTR(0x54, 0x0C),
++	EK79007AD_COMMAND_INSTR(0x54, 0x0E),
++	EK79007AD_COMMAND_INSTR(0x54, 0x0F),
++	EK79007AD_COMMAND_INSTR(0x54, 0x10),
++	EK79007AD_COMMAND_INSTR(0x55, 0x11),
++	EK79007AD_COMMAND_INSTR(0x55, 0x11),
++	EK79007AD_COMMAND_INSTR(0x55, 0x11),
++	EK79007AD_COMMAND_INSTR(0x55, 0x11),
++	EK79007AD_COMMAND_INSTR(0x55, 0x11),
++	EK79007AD_COMMAND_INSTR(0x55, 0x11),
++	EK79007AD_COMMAND_INSTR(0x55, 0x11),
++	EK79007AD_COMMAND_INSTR(0x55, 0x11),
++	EK79007AD_COMMAND_INSTR(0x56, 0x08),
++	EK79007AD_COMMAND_INSTR(0x67, 0x22),
++	EK79007AD_COMMAND_INSTR(0x57, 0x81),
++	EK79007AD_COMMAND_INSTR(0x65, 0x30),
++	EK79007AD_COMMAND_INSTR(0x67, 0x22),
++	EK79007AD_COMMAND_INSTR(0x6F, 0x19),
++	EK79007AD_COMMAND_INSTR(0x6F, 0x11),
++	EK79007AD_COMMAND_INSTR(0x6F, 0x11),
++	EK79007AD_COMMAND_INSTR(0x6F, 0x0A),
++	EK79007AD_COMMAND_INSTR(0x6F, 0x01),
++	EK79007AD_COMMAND_INSTR(0x6F, 0x01),
++	EK79007AD_COMMAND_INSTR(0x6D, 0xA5),
++	EK79007AD_COMMAND_INSTR(0x6C, 0x08),
++	EK79007AD_COMMAND_INSTR(0x0E, 0x0A),
++};
++
+ static inline struct ek79007ad* panel_to_ek79007ad(struct drm_panel* panel) {
+ 	return container_of(panel, struct ek79007ad, panel);
+ }
+@@ -224,6 +355,40 @@ static const struct drm_display_mode vklcd07_default_mode = {
+ 	.height_mm = 86,
+ };
+ 
++static const struct drm_display_mode vklcd_kd070hdfia030_default_mode = {
++	.clock = 51200,
++
++	.hdisplay = 1024,
++	.hsync_start = 1024 + 160,
++	.hsync_end = 1024 + 160 + 70,
++	.htotal = 1024 + 160 + 70 + 90,
++
++	.vdisplay = 600,
++	.vsync_start = 600 + 23,
++	.vsync_end = 600 + 23 + 5,
++	.vtotal = 600 + 23 + 5 + 7,
++
++	.width_mm = 154,
++	.height_mm = 86,
++};
++
++static const struct drm_display_mode vklcd_kd101wxfid045_default_mode = {
++	.clock = 72400,
++
++	.hdisplay = 1280,
++	.hsync_start = 1280 + 48,
++	.hsync_end = 1280 + 48 + 40,
++	.htotal = 1280 + 48 + 40 + 72,
++
++	.vdisplay = 800,
++	.vsync_start = 800 + 18,
++	.vsync_end = 800 + 18 + 5,
++	.vtotal = 800 + 18 + 5 + 15,
++
++	.width_mm = 217,
++	.height_mm = 136,
++};
++
+ static int ek79007ad_get_modes(struct drm_panel* panel,
+ 	struct drm_connector* connector) {
+ 	struct ek79007ad* ctx = panel_to_ek79007ad(panel);
+@@ -333,8 +498,22 @@ static const struct ek79007ad_desc vklcd07_desc = {
+ 	.mode = &vklcd07_default_mode,
+ };
+ 
++static const struct ek79007ad_desc vklcd_kd070hdfia030_desc = {
++	.init = ek79007ad_init_vklcd_kd070hdfia030,
++	.init_length = ARRAY_SIZE(ek79007ad_init_vklcd_kd070hdfia030),
++	.mode = &vklcd_kd070hdfia030_default_mode,
++};
++
++static const struct ek79007ad_desc vklcd_kd101wxfid045_desc = {
++	.init = ek79007ad_init_vklcd_kd101wxfid045,
++	.init_length = ARRAY_SIZE(ek79007ad_init_vklcd_kd101wxfid045),
++	.mode = &vklcd_kd101wxfid045_default_mode,
++};
++
+ static const struct of_device_id ek79007ad_of_match[] = {
+ 	{.compatible = "vekatech,vklcd07", .data = &vklcd07_desc },
++	{.compatible = "vekatech,vklcd-kd070hdfia030", .data = &vklcd_kd070hdfia030_desc },
++	{.compatible = "vekatech,vklcd-kd101wxfid045", .data = &vklcd_kd101wxfid045_desc },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, ek79007ad_of_match);
