@@ -22,22 +22,26 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/Kconfigs:"
 
 SRC_URI += " \
 	file://ADV7511.cfg \
-            file://CANBUS.cfg \
-            file://EEPROM_I2C.cfg \
-            file://GT911.cfg \
-            file://MXTTOUCH.cfg \
-            file://NETWORK.cfg \
-            file://PANEL_ILITEK_ILI9881C.cfg \
-            file://PANEL_PANEL_FITIPOWER_EK79007AD.cfg \
-            file://RTL8211F.cfg \
-            file://SND_SOC_DA7213.cfg \
-            file://TRACEPOINTS.cfg \
-            file://UDMABUF.cfg \
-            file://USB_GADGET.cfg \
-            file://USB_ACM.cfg \
-            file://USB_WL.cfg \
-            file://BT.cfg \
-            "
+	file://CANBUS.cfg \
+	file://EEPROM_I2C.cfg \
+	file://GT911.cfg \
+	file://MXTTOUCH.cfg \
+	file://LONTIUM_LT8912B.cfg \
+	file://NETWORK.cfg \
+	file://PANEL_ILITEK_ILI9881C.cfg \
+	file://PANEL_PANEL_FITIPOWER_EK79007AD.cfg \
+	file://RTL8211F.cfg \
+	file://SND_SOC_DA7213.cfg \
+	file://TRACEPOINTS.cfg \
+	file://UDMABUF.cfg \
+	file://USB_GADGET.cfg \
+	file://USB_ACM.cfg \
+	file://USB_SERIAL.cfg \
+	file://USB_MODEM.cfg \
+	file://SND_SEQ.cfg \
+	file://USB_WL.cfg \
+	file://BT.cfg \
+"
 
 SRC_URI += " ${@oe.utils.conditional("CONFIG_HASSI", "1", " file://docker.cfg file://apparmor.cfg ", "", d)} "
 
