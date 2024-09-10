@@ -1,6 +1,6 @@
-From 97fc86e5c53dc090e3d41525823cf70428796371 Mon Sep 17 00:00:00 2001
+From 343f0095f1f703e09b3f0843a4de77fbaf1fa0dc Mon Sep 17 00:00:00 2001
 From: OpenEmbedded <oe.patch@oe>
-Date: Mon, 9 Sep 2024 23:16:43 +0300
+Date: Tue, 10 Sep 2024 22:22:58 +0300
 Subject: [PATCH] add vklcd-kd070hdfia030 and vklcd-kd101wxfid045 support
 
 Signed-off-by: OpenEmbedded <oe.patch@oe>
@@ -8,9 +8,9 @@ Signed-off-by: OpenEmbedded <oe.patch@oe>
  arch/arm64/boot/dts/renesas/overlays/Makefile |   2 +
  .../overlays/vkrz-dsi-kd070hdfia030.dts       |  61 ++++++
  .../overlays/vkrz-dsi-kd101wxfid045.dts       |  61 ++++++
- arch/arm64/boot/dts/renesas/vkrzg2lc.dts      |  11 ++
+ arch/arm64/boot/dts/renesas/vkrzg2lc.dts      |  22 +++
  .../gpu/drm/panel/panel-fitipower-ek79007ad.c | 179 ++++++++++++++++++
- 5 files changed, 314 insertions(+)
+ 5 files changed, 325 insertions(+)
  create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd070hdfia030.dts
  create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd101wxfid045.dts
 
@@ -26,7 +26,7 @@ index 1ca4a1510bb6..1c88ac9b846b 100644
 +dtb-y += vkrz-dsi-kd101wxfid045.dtbo
 diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd070hdfia030.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd070hdfia030.dts
 new file mode 100755
-index 000000000000..4e4bf7d51fd0
+index 000000000000..da762f9dbccb
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd070hdfia030.dts
 @@ -0,0 +1,61 @@
@@ -87,7 +87,7 @@ index 000000000000..4e4bf7d51fd0
 +	status = "okay";
 +};
 +
-+&gt911 {
++&gt9271 {
 +	status = "okay";
 +	reset-gpios = <&pinctrl RZG2L_GPIO(4, 1) GPIO_ACTIVE_LOW>;
 +};
@@ -159,13 +159,24 @@ index 000000000000..2b6939a2ae60
 +	reset-gpios = <&pinctrl RZG2L_GPIO(4, 1) GPIO_ACTIVE_LOW>;
 +};
 diff --git a/arch/arm64/boot/dts/renesas/vkrzg2lc.dts b/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
-index 1bcbb8048e20..54c04b1c9a94 100755
+index 1bcbb8048e20..facc5d29356c 100755
 --- a/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
 +++ b/arch/arm64/boot/dts/renesas/vkrzg2lc.dts
-@@ -528,6 +528,17 @@ mxt1066t2: mxt1066t2_ts@4a {
+@@ -528,6 +528,28 @@ mxt1066t2: mxt1066t2_ts@4a {
  		interrupts = <RZG2L_GPIO(43, 1) IRQ_TYPE_LEVEL_LOW>;
  		irq-gpios = <&pinctrl RZG2L_GPIO(43, 1) GPIO_ACTIVE_HIGH>;   /* DSI_TS_nINT */
  	};
++
++	gt9271: gt9271_ts@5d {
++		compatible = "goodix,gt911";
++		reg = <0x5d>;
++
++		status = "disabled";
++
++		interrupt-parent = <&pinctrl>;
++		interrupts = <RZG2L_GPIO(43, 1) IRQ_TYPE_LEVEL_LOW>;
++		irq-gpios = <&pinctrl RZG2L_GPIO(43, 1) GPIO_ACTIVE_HIGH>;   /* DSI_TS_nINT */
++	};
 +
 +	ft5626: ft5626_ts@3e {
 +		compatible = "edt,edt-ft5506";
@@ -178,7 +189,7 @@ index 1bcbb8048e20..54c04b1c9a94 100755
 +		irq-gpios = <&pinctrl RZG2L_GPIO(43, 1) GPIO_ACTIVE_HIGH>;   /* DSI_TS_nINT */
 +	};
  };
- 
+
  &gpt3 {
 diff --git a/drivers/gpu/drm/panel/panel-fitipower-ek79007ad.c b/drivers/gpu/drm/panel/panel-fitipower-ek79007ad.c
 index 5b051912bdf4..313e8fa40e25 100644
@@ -187,7 +198,7 @@ index 5b051912bdf4..313e8fa40e25 100644
 @@ -55,6 +55,137 @@ static const struct ek79007ad_instr ek79007ad_init_vklcd07[] = {
  	EK79007AD_COMMAND_INSTR(0xB3, 0x00),
  };
- 
+
 +/* support new panel vklcd-kd070hdfia030 (kd070hdfia030) */
 +static const struct ek79007ad_instr ek79007ad_init_vklcd_kd070hdfia030[] = {
 +	EK79007AD_COMMAND_INSTR(0xB2, 0x40),	// 0x40:4LANE, 0x50: 2LANE
@@ -325,7 +336,7 @@ index 5b051912bdf4..313e8fa40e25 100644
 @@ -224,6 +355,40 @@ static const struct drm_display_mode vklcd07_default_mode = {
  	.height_mm = 86,
  };
- 
+
 +static const struct drm_display_mode vklcd_kd070hdfia030_default_mode = {
 +	.clock = 51200,
 +
@@ -366,7 +377,7 @@ index 5b051912bdf4..313e8fa40e25 100644
 @@ -333,8 +498,22 @@ static const struct ek79007ad_desc vklcd07_desc = {
  	.mode = &vklcd07_default_mode,
  };
- 
+
 +static const struct ek79007ad_desc vklcd_kd070hdfia030_desc = {
 +	.init = ek79007ad_init_vklcd_kd070hdfia030,
 +	.init_length = ARRAY_SIZE(ek79007ad_init_vklcd_kd070hdfia030),
