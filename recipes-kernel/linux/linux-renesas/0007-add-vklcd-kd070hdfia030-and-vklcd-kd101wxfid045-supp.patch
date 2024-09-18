@@ -1,19 +1,36 @@
-From 343f0095f1f703e09b3f0843a4de77fbaf1fa0dc Mon Sep 17 00:00:00 2001
+From e143d8dd71551a09ae44863c8ad3f6cde2ac6dd8 Mon Sep 17 00:00:00 2001
 From: OpenEmbedded <oe.patch@oe>
-Date: Tue, 10 Sep 2024 22:22:58 +0300
+Date: Wed, 18 Sep 2024 10:17:47 +0300
 Subject: [PATCH] add vklcd-kd070hdfia030 and vklcd-kd101wxfid045 support
 
-Signed-off-by: OpenEmbedded <oe.patch@oe>
 ---
+ .../display/panel/fitipower,ek79007ad.yaml    |   1 -
  arch/arm64/boot/dts/renesas/overlays/Makefile |   2 +
- .../overlays/vkrz-dsi-kd070hdfia030.dts       |  61 ++++++
- .../overlays/vkrz-dsi-kd101wxfid045.dts       |  61 ++++++
- arch/arm64/boot/dts/renesas/vkrzg2lc.dts      |  22 +++
- .../gpu/drm/panel/panel-fitipower-ek79007ad.c | 179 ++++++++++++++++++
- 5 files changed, 325 insertions(+)
+ .../overlays/vkrz-dsi-kd070hdfia030.dts       |  61 +++
+ .../overlays/vkrz-dsi-kd101wxfid045.dts       |  62 +++
+ arch/arm64/boot/dts/renesas/vkrzg2lc.dts      |  22 +
+ drivers/gpu/drm/panel/Kconfig                 |   9 +
+ drivers/gpu/drm/panel/Makefile                |   1 +
+ .../gpu/drm/panel/panel-fitipower-ek79007ad.c |  43 +-
+ .../gpu/drm/panel/panel-fitipower-ek79202d.c  | 443 ++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rzg2l_mipi_dsi.c      |  61 ++-
+ 10 files changed, 669 insertions(+), 36 deletions(-)
  create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd070hdfia030.dts
  create mode 100755 arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd101wxfid045.dts
+ create mode 100644 drivers/gpu/drm/panel/panel-fitipower-ek79202d.c
 
+diff --git a/Documentation/devicetree/bindings/display/panel/fitipower,ek79007ad.yaml b/Documentation/devicetree/bindings/display/panel/fitipower,ek79007ad.yaml
+index def13803755c..7ceafb9bda9f 100644
+--- a/Documentation/devicetree/bindings/display/panel/fitipower,ek79007ad.yaml
++++ b/Documentation/devicetree/bindings/display/panel/fitipower,ek79007ad.yaml
+@@ -21,7 +21,6 @@ properties:
+   reg: true
+   reset-gpios: true
+   lcd-model: true
+-  lcd-model: true
+   dsi-lanes: true
+ 
+ required:
 diff --git a/arch/arm64/boot/dts/renesas/overlays/Makefile b/arch/arm64/boot/dts/renesas/overlays/Makefile
 index 1ca4a1510bb6..1c88ac9b846b 100644
 --- a/arch/arm64/boot/dts/renesas/overlays/Makefile
@@ -93,10 +110,10 @@ index 000000000000..da762f9dbccb
 +};
 diff --git a/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd101wxfid045.dts b/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd101wxfid045.dts
 new file mode 100755
-index 000000000000..2b6939a2ae60
+index 000000000000..9e7af2a627dd
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/overlays/vkrz-dsi-kd101wxfid045.dts
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,62 @@
 +     /*
 + * Copyright 2023 Vekatech
 + *
@@ -134,11 +151,12 @@ index 000000000000..2b6939a2ae60
 +
 +&mipi_panel {
 +	status = "okay";
-+	compatible = "vekatech,vklcd-kd101wxfid045","fitipower,ek79007ad";
++	compatible = "vekatech,vklcd-kd101wxfid045","fitipower,ek79202d";
 +
 +	reset-gpios = <&pinctrl RZG2L_GPIO(22, 1) (GPIO_ACTIVE_LOW|GPIO_OPEN_DRAIN)>;
 +	lcd-model = "kd101wxfid045";
 +	dsi-lanes = <4>;
++	video-mode = <2>;
 +	port {
 +		panel_in: endpoint {
 +			remote-endpoint = <&dsi0_out>;
@@ -189,16 +207,54 @@ index 1bcbb8048e20..facc5d29356c 100755
 +		irq-gpios = <&pinctrl RZG2L_GPIO(43, 1) GPIO_ACTIVE_HIGH>;   /* DSI_TS_nINT */
 +	};
  };
-
+ 
  &gpt3 {
+diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
+index 785feb502969..2339bffe0389 100644
+--- a/drivers/gpu/drm/panel/Kconfig
++++ b/drivers/gpu/drm/panel/Kconfig
+@@ -106,6 +106,15 @@ config DRM_PANEL_FITIPOWER_EK79007AD
+ 	  Say Y if you want to enable support for panels based on the
+ 	  Fitipower EK79007AD controller.
+ 
++config DRM_PANEL_FITIPOWER_EK79202D
++	tristate "Fitipower EK79202D-based panels"
++	depends on OF
++	depends on DRM_MIPI_DSI
++	depends on BACKLIGHT_CLASS_DEVICE
++	help
++	  Say Y if you want to enable support for panels based on the
++	  Fitipower EK79202D controller.
++
+  config DRM_PANEL_ILITEK_IL9322
+ 	tristate "Ilitek ILI9322 320x240 QVGA panels"
+ 	depends on OF && SPI
+diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
+index 81a0d1f5b2e7..9e6046b5363a 100644
+--- a/drivers/gpu/drm/panel/Makefile
++++ b/drivers/gpu/drm/panel/Makefile
+@@ -54,3 +54,4 @@ obj-$(CONFIG_DRM_PANEL_TRULY_NT35597_WQXGA) += panel-truly-nt35597.o
+ obj-$(CONFIG_DRM_PANEL_VISIONOX_RM69299) += panel-visionox-rm69299.o
+ obj-$(CONFIG_DRM_PANEL_XINPENG_XPP055C272) += panel-xinpeng-xpp055c272.o
+ obj-$(CONFIG_DRM_PANEL_FITIPOWER_EK79007AD) += panel-fitipower-ek79007ad.o
++obj-$(CONFIG_DRM_PANEL_FITIPOWER_EK79202D) += panel-fitipower-ek79202d.o
 diff --git a/drivers/gpu/drm/panel/panel-fitipower-ek79007ad.c b/drivers/gpu/drm/panel/panel-fitipower-ek79007ad.c
-index 5b051912bdf4..313e8fa40e25 100644
+index 5b051912bdf4..503dddc9b0b0 100644
 --- a/drivers/gpu/drm/panel/panel-fitipower-ek79007ad.c
 +++ b/drivers/gpu/drm/panel/panel-fitipower-ek79007ad.c
-@@ -55,6 +55,137 @@ static const struct ek79007ad_instr ek79007ad_init_vklcd07[] = {
+@@ -45,7 +45,7 @@ struct ek79007ad {
+ 	{						\
+ 		.cmd = (_cmd),		\
+ 		.data = (_data),	\
+-	}
++}
+ 
+ /* support new panel vklcd07 (kwh070kq40-c08) */
+ static const struct ek79007ad_instr ek79007ad_init_vklcd07[] = {
+@@ -55,6 +55,21 @@ static const struct ek79007ad_instr ek79007ad_init_vklcd07[] = {
  	EK79007AD_COMMAND_INSTR(0xB3, 0x00),
  };
-
+ 
 +/* support new panel vklcd-kd070hdfia030 (kd070hdfia030) */
 +static const struct ek79007ad_instr ek79007ad_init_vklcd_kd070hdfia030[] = {
 +	EK79007AD_COMMAND_INSTR(0xB2, 0x40),	// 0x40:4LANE, 0x50: 2LANE
@@ -213,130 +269,23 @@ index 5b051912bdf4..313e8fa40e25 100644
 +	EK79007AD_COMMAND_INSTR(0x86, 0x88),
 +};
 +
-+/* support new panel vklcd-kd101wxfid045 (kd101wxfid045) */
-+static const struct ek79007ad_instr ek79007ad_init_vklcd_kd101wxfid045[] = {
-+	EK79007AD_COMMAND_INSTR(0xCD, 0xAA),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x12),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x10),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x11),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x04),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x05),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x06),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x07),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x08),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x09),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x0A),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x0B),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x03),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x0C),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x52, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x03),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x12),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x10),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x11),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x04),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x05),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x06),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x07),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x08),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x09),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x0A),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x0B),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x03),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x0C),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x59, 0x13),
-+	EK79007AD_COMMAND_INSTR(0x32, 0x02),
-+	EK79007AD_COMMAND_INSTR(0x34, 0x7E),
-+	EK79007AD_COMMAND_INSTR(0x5F, 0x38),
-+	EK79007AD_COMMAND_INSTR(0x2B, 0x20),
-+	EK79007AD_COMMAND_INSTR(0x35, 0x05),
-+	EK79007AD_COMMAND_INSTR(0x33, 0x08),
-+	EK79007AD_COMMAND_INSTR(0x51, 0x80),
-+	EK79007AD_COMMAND_INSTR(0x73, 0xF0),
-+	EK79007AD_COMMAND_INSTR(0x74, 0x91),
-+	EK79007AD_COMMAND_INSTR(0x75, 0x03),
-+	EK79007AD_COMMAND_INSTR(0x71, 0xE3),
-+	EK79007AD_COMMAND_INSTR(0x7A, 0x17),
-+	EK79007AD_COMMAND_INSTR(0x3C, 0x40),
-+	EK79007AD_COMMAND_INSTR(0x4A, 0x02),
-+	EK79007AD_COMMAND_INSTR(0x18, 0xFF),
-+	EK79007AD_COMMAND_INSTR(0x19, 0x1F),
-+	EK79007AD_COMMAND_INSTR(0x1A, 0xDC),
-+	EK79007AD_COMMAND_INSTR(0x4E, 0x4A),
-+	EK79007AD_COMMAND_INSTR(0x4F, 0x4C),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x37),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x2A),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x29),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x2A),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x2E),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x2F),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x22),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x0D),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x0E),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x0C),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x0E),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x0F),
-+	EK79007AD_COMMAND_INSTR(0x53, 0x10),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x37),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x2A),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x29),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x2A),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x2E),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x2F),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x22),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x0D),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x0E),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x0C),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x0E),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x0F),
-+	EK79007AD_COMMAND_INSTR(0x54, 0x10),
-+	EK79007AD_COMMAND_INSTR(0x55, 0x11),
-+	EK79007AD_COMMAND_INSTR(0x55, 0x11),
-+	EK79007AD_COMMAND_INSTR(0x55, 0x11),
-+	EK79007AD_COMMAND_INSTR(0x55, 0x11),
-+	EK79007AD_COMMAND_INSTR(0x55, 0x11),
-+	EK79007AD_COMMAND_INSTR(0x55, 0x11),
-+	EK79007AD_COMMAND_INSTR(0x55, 0x11),
-+	EK79007AD_COMMAND_INSTR(0x55, 0x11),
-+	EK79007AD_COMMAND_INSTR(0x56, 0x08),
-+	EK79007AD_COMMAND_INSTR(0x67, 0x22),
-+	EK79007AD_COMMAND_INSTR(0x57, 0x81),
-+	EK79007AD_COMMAND_INSTR(0x65, 0x30),
-+	EK79007AD_COMMAND_INSTR(0x67, 0x22),
-+	EK79007AD_COMMAND_INSTR(0x6F, 0x19),
-+	EK79007AD_COMMAND_INSTR(0x6F, 0x11),
-+	EK79007AD_COMMAND_INSTR(0x6F, 0x11),
-+	EK79007AD_COMMAND_INSTR(0x6F, 0x0A),
-+	EK79007AD_COMMAND_INSTR(0x6F, 0x01),
-+	EK79007AD_COMMAND_INSTR(0x6F, 0x01),
-+	EK79007AD_COMMAND_INSTR(0x6D, 0xA5),
-+	EK79007AD_COMMAND_INSTR(0x6C, 0x08),
-+	EK79007AD_COMMAND_INSTR(0x0E, 0x0A),
-+};
 +
  static inline struct ek79007ad* panel_to_ek79007ad(struct drm_panel* panel) {
  	return container_of(panel, struct ek79007ad, panel);
  }
-@@ -224,6 +355,40 @@ static const struct drm_display_mode vklcd07_default_mode = {
+@@ -190,7 +205,7 @@ static int ek79007ad_enable(struct drm_panel* panel) {
+ static int ek79007ad_disable(struct drm_panel* panel) {
+ 	struct ek79007ad* ctx = panel_to_ek79007ad(panel);
+ 
+-		return mipi_dsi_dcs_enter_sleep_mode(ctx->dsi);
++	return mipi_dsi_dcs_enter_sleep_mode(ctx->dsi);
+ }
+ 
+ static int ek79007ad_unprepare(struct drm_panel* panel) {
+@@ -224,6 +239,23 @@ static const struct drm_display_mode vklcd07_default_mode = {
  	.height_mm = 86,
  };
-
+ 
 +static const struct drm_display_mode vklcd_kd070hdfia030_default_mode = {
 +	.clock = 51200,
 +
@@ -354,46 +303,608 @@ index 5b051912bdf4..313e8fa40e25 100644
 +	.height_mm = 86,
 +};
 +
-+static const struct drm_display_mode vklcd_kd101wxfid045_default_mode = {
-+	.clock = 72400,
-+
-+	.hdisplay = 1280,
-+	.hsync_start = 1280 + 48,
-+	.hsync_end = 1280 + 48 + 40,
-+	.htotal = 1280 + 48 + 40 + 72,
-+
-+	.vdisplay = 800,
-+	.vsync_start = 800 + 18,
-+	.vsync_end = 800 + 18 + 5,
-+	.vtotal = 800 + 18 + 5 + 15,
-+
-+	.width_mm = 217,
-+	.height_mm = 136,
-+};
-+
  static int ek79007ad_get_modes(struct drm_panel* panel,
  	struct drm_connector* connector) {
  	struct ek79007ad* ctx = panel_to_ek79007ad(panel);
-@@ -333,8 +498,22 @@ static const struct ek79007ad_desc vklcd07_desc = {
+@@ -333,8 +365,15 @@ static const struct ek79007ad_desc vklcd07_desc = {
  	.mode = &vklcd07_default_mode,
  };
-
+ 
 +static const struct ek79007ad_desc vklcd_kd070hdfia030_desc = {
 +	.init = ek79007ad_init_vklcd_kd070hdfia030,
 +	.init_length = ARRAY_SIZE(ek79007ad_init_vklcd_kd070hdfia030),
 +	.mode = &vklcd_kd070hdfia030_default_mode,
 +};
 +
-+static const struct ek79007ad_desc vklcd_kd101wxfid045_desc = {
-+	.init = ek79007ad_init_vklcd_kd101wxfid045,
-+	.init_length = ARRAY_SIZE(ek79007ad_init_vklcd_kd101wxfid045),
-+	.mode = &vklcd_kd101wxfid045_default_mode,
-+};
-+
  static const struct of_device_id ek79007ad_of_match[] = {
  	{.compatible = "vekatech,vklcd07", .data = &vklcd07_desc },
 +	{.compatible = "vekatech,vklcd-kd070hdfia030", .data = &vklcd_kd070hdfia030_desc },
-+	{.compatible = "vekatech,vklcd-kd101wxfid045", .data = &vklcd_kd101wxfid045_desc },
  	{ }
  };
  MODULE_DEVICE_TABLE(of, ek79007ad_of_match);
+diff --git a/drivers/gpu/drm/panel/panel-fitipower-ek79202d.c b/drivers/gpu/drm/panel/panel-fitipower-ek79202d.c
+new file mode 100644
+index 000000000000..5f4bb7d13536
+--- /dev/null
++++ b/drivers/gpu/drm/panel/panel-fitipower-ek79202d.c
+@@ -0,0 +1,443 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2021-2022, US Micro Products
++ * Modified: Daniel Wu
++ */
++
++//#include <linux/backlight.h>
++#include <linux/delay.h>
++#include <linux/device.h>
++#include <linux/err.h>
++#include <linux/errno.h>
++#include <linux/fb.h>
++#include <linux/kernel.h>
++#include <linux/media-bus-format.h>
++#include <linux/module.h>
++#include <linux/of_device.h>
++
++#include <linux/gpio/consumer.h>
++#include <linux/regulator/consumer.h>
++
++#include <drm/drm_mipi_dsi.h>
++#include <drm/drm_modes.h>
++#include <drm/drm_panel.h>
++
++#include <video/mipi_display.h>
++
++#include <linux/errname.h>
++
++//#define DEBUG
++
++// Add for switch panel function
++struct ek79202d_desc {
++	const struct ek79202d_init_cmd* init;
++	const size_t init_length;
++	const struct drm_display_mode* mode;
++};
++
++struct ek79202d {
++	struct drm_panel panel;
++	struct mipi_dsi_device* dsi;
++	// Add for switch panel function
++	const struct ek79202d_desc* desc;
++	//struct backlight_device* backlight;
++	struct regulator* vdd;
++	//	struct gpio_desc *enable_gpio;
++	struct gpio_desc* reset_gpio;
++	struct gpio_desc* enable_gpio;
++};
++
++static const u32 fitipower_bus_formats[] = {
++	MEDIA_BUS_FMT_RGB888_1X24,
++	MEDIA_BUS_FMT_RGB666_1X18,
++	MEDIA_BUS_FMT_RGB565_1X16,
++};
++
++static const u32 fitipower_bus_flags = DRM_BUS_FLAG_DE_LOW | DRM_BUS_FLAG_PIXDATA_SAMPLE_NEGEDGE;
++
++static inline struct ek79202d* panel_to_ek79202d(struct drm_panel* panel) {
++	return container_of(panel, struct ek79202d, panel);
++}
++
++struct ek79202d_init_cmd {
++	size_t len;
++	const char* data;
++};
++
++#define EK79202D_INIT_CMD(...)									\
++{																\
++	.len = sizeof((char[]){__VA_ARGS__}), .data = (char[]) {	\
++		__VA_ARGS__												\
++	}															\
++}
++
++static const struct ek79202d_init_cmd ek97202d_leadership_init_cmds[] = {
++	EK79202D_INIT_CMD(0xCD, 0xAA),
++	EK79202D_INIT_CMD(0x52, 0x13, 0x13, 0x13, 0x13, 0x13, 0x13, 0x12, 0x13, 0x10, 0x11, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x03, 0x0C, 0x13, 0x13),
++	EK79202D_INIT_CMD(0x59, 0x13, 0x13, 0x13, 0x13, 0x13, 0x13, 0x12, 0x13, 0x10, 0x11, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x03, 0x0C, 0x13, 0x13),
++	EK79202D_INIT_CMD(0x32, 0x02),  // BIST mode select: BIST_PIN=High with
++									// 0x32=0x02 normal display.
++	EK79202D_INIT_CMD(0x34, 0x7E),
++	EK79202D_INIT_CMD(0x5F, 0x38),
++	EK79202D_INIT_CMD(0x2B, 0x20),
++	EK79202D_INIT_CMD(0x35, 0x25),  // 25
++	EK79202D_INIT_CMD(0x33, 0x08),  // ZIGZAG=1
++	EK79202D_INIT_CMD(0x51, 0x80),
++	EK79202D_INIT_CMD(0x73, 0xF0),
++	EK79202D_INIT_CMD(0x74, 0x91),
++	EK79202D_INIT_CMD(0x75, 0x03),
++	EK79202D_INIT_CMD(0x71, 0xC3),
++	EK79202D_INIT_CMD(0x7A, 0x17),
++	EK79202D_INIT_CMD(0x3C, 0x40),
++	EK79202D_INIT_CMD(0x4A, 0x02),
++	EK79202D_INIT_CMD(0x18, 0xFF),
++	EK79202D_INIT_CMD(0x19, 0x1F),
++	EK79202D_INIT_CMD(0x1A, 0xDC),
++	EK79202D_INIT_CMD(0x4E, 0x4A),
++	EK79202D_INIT_CMD(0x4F, 0x4C),
++	EK79202D_INIT_CMD(0x53, 0x37, 0x2A, 0x29, 0x2A, 0x2E, 0x2F, 0x22, 0x0D, 0x0E, 0x0C, 0x0E, 0x0F, 0x10),
++	EK79202D_INIT_CMD(0x54, 0x37, 0x2A, 0x29, 0x2A, 0x2E, 0x2F, 0x22, 0x0D, 0x0E, 0x0C, 0x0E, 0x0F, 0x10),
++	EK79202D_INIT_CMD(0x55, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11),
++	EK79202D_INIT_CMD(0x56, 0x08),
++	EK79202D_INIT_CMD(0x67, 0x22),
++	EK79202D_INIT_CMD(0x6F, 0x01, 0x01, 0x01, 0x0A, 0x01, 0x01),
++	EK79202D_INIT_CMD(0x6D, 0xA5),
++	EK79202D_INIT_CMD(0x6C, 0x08),
++	EK79202D_INIT_CMD(0x0E, 0x0A),
++	EK79202D_INIT_CMD(0x5E, 0x02),
++	EK79202D_INIT_CMD(0x4A, 0x04),
++	EK79202D_INIT_CMD(0x7A, 0x37),
++};
++
++/* support new panel vklcd-kd101wxfid045 (kd101wxfid045) */
++static const struct ek79202d_init_cmd ek79202d_init_vklcd_kd101wxfid045[] = {
++	EK79202D_INIT_CMD(0xCD, 0xAA),
++	EK79202D_INIT_CMD(0x52, 0x13, 0x13, 0x13, 0x13, 0x13, 0x13, 0x12, 0x13, 0x10, 0x11, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x03, 0x0C, 0x13, 0x13),
++	EK79202D_INIT_CMD(0x59, 0x13, 0x13, 0x13, 0x13, 0x13, 0x13, 0x12, 0x13, 0x10, 0x11, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x03, 0x0C, 0x13, 0x13),
++	EK79202D_INIT_CMD(0x32, 0x02),  // BIST mode select: BIST_PIN=High with
++									// 0x32=0x02 normal display.
++	EK79202D_INIT_CMD(0x34, 0x7E),
++	EK79202D_INIT_CMD(0x5F, 0x38),
++	EK79202D_INIT_CMD(0x2B, 0x20),
++	EK79202D_INIT_CMD(0x35, 0x05),
++	EK79202D_INIT_CMD(0x33, 0x08),
++	EK79202D_INIT_CMD(0x51, 0x80),
++	EK79202D_INIT_CMD(0x73, 0xF0),
++	EK79202D_INIT_CMD(0x74, 0x91),
++	EK79202D_INIT_CMD(0x75, 0x03),
++	EK79202D_INIT_CMD(0x71, 0xE3),
++	EK79202D_INIT_CMD(0x7A, 0x17),
++	EK79202D_INIT_CMD(0x3C, 0x40),
++	EK79202D_INIT_CMD(0x4A, 0x02),
++	EK79202D_INIT_CMD(0x18, 0xFF),
++	EK79202D_INIT_CMD(0x19, 0x1F),
++	EK79202D_INIT_CMD(0x1A, 0xDC),
++	EK79202D_INIT_CMD(0x4E, 0x4A),
++	EK79202D_INIT_CMD(0x4F, 0x4C),
++	EK79202D_INIT_CMD(0x53, 0x37, 0x2A, 0x29, 0x2A, 0x2E, 0x2F, 0x22, 0x0D, 0x0E, 0x0C, 0x0E, 0x0F, 0x10),
++	EK79202D_INIT_CMD(0x54, 0x37, 0x2A, 0x29, 0x2A, 0x2E, 0x2F, 0x22, 0x0D, 0x0E, 0x0C, 0x0E, 0x0F, 0x10),
++	EK79202D_INIT_CMD(0x55, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11),
++	EK79202D_INIT_CMD(0x56, 0x08),
++	EK79202D_INIT_CMD(0x67, 0x22),
++	EK79202D_INIT_CMD(0x57, 0x81),
++	EK79202D_INIT_CMD(0x65, 0x30),
++	EK79202D_INIT_CMD(0x67, 0x22),
++	EK79202D_INIT_CMD(0x6F, 0x19, 0x11, 0x11, 0x0A, 0x01, 0x01),
++	EK79202D_INIT_CMD(0x6D, 0xA5),
++	EK79202D_INIT_CMD(0x6C, 0x08),
++	EK79202D_INIT_CMD(0x0E, 0x0A),
++};
++
++static int ek79202d_prepare(struct drm_panel* panel) {
++	struct ek79202d* ctx = panel_to_ek79202d(panel);
++	struct mipi_dsi_device* dsi = ctx->dsi;
++	unsigned int i;
++	int ret;
++
++	ret = regulator_enable(ctx->vdd);
++	if (ret) {
++		dev_err(&dsi->dev, "ek79202d_prepare failed %d(%s)\n", ret, errname(ret));
++		return ret;
++	}
++
++	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
++	msleep(1);
++
++	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
++	msleep(10);
++
++	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
++	msleep(120);
++
++	// Must change to Low Power Mode to send initialization code
++	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
++
++	// Must move following codes from prepare function to solve no crtc problem.
++	for (i = 0; i < ctx->desc->init_length; i++) {
++		const struct ek79202d_init_cmd* cmd = &ctx->desc->init[i];
++
++		ret = mipi_dsi_dcs_write_buffer(dsi, cmd->data, cmd->len);
++
++		if (ret < 0) {
++			dev_err(&dsi->dev, "ek79202d_prepare->mipi_dsi_dcs_write_buffer failed %d(%s), index %d\n", ret, errname(ret), i);
++			return ret;
++		}
++	}
++
++	ret = mipi_dsi_dcs_set_tear_on(ctx->dsi, MIPI_DSI_DCS_TEAR_MODE_VBLANK);
++	if (ret) {
++		dev_err(&dsi->dev, "ek79202d_prepare->mipi_dsi_dcs_set_tear_on failed %d(%s)\n", ret, errname(ret));
++		return ret;
++	}
++	msleep(240);
++	ret = mipi_dsi_dcs_exit_sleep_mode(ctx->dsi);
++	if (ret) {
++		dev_err(&dsi->dev, "ek79202d_prepare->mipi_dsi_dcs_exit_sleep_mode failed %d(%s)\n", ret, errname(ret));
++		return ret;
++	}
++
++	dev_dbg(&dsi->dev, "ek79202d_prepare done\n");
++	return 0;
++}
++
++static int ek79202d_enable(struct drm_panel* panel) {
++	struct ek79202d* ctx = panel_to_ek79202d(panel);
++	struct mipi_dsi_device* dsi = ctx->dsi;
++	int ret;
++
++	msleep(240);
++	ret = mipi_dsi_dcs_exit_sleep_mode(ctx->dsi);
++	if (ret) {
++		dev_err(&dsi->dev, "ek79202d_enable->mipi_dsi_dcs_exit_sleep_mode failed %d(%s)\n", ret, errname(ret));
++		return ret;
++	}
++
++	dev_dbg(&ctx->dsi->dev, "ek79202d_enable done\n");
++	return 0;
++}
++
++static int ek79202d_disable(struct drm_panel* panel) {
++	struct ek79202d* ctx = panel_to_ek79202d(panel);
++
++	dev_dbg(&ctx->dsi->dev, "ek79202d_disable()\n");
++	return mipi_dsi_dcs_enter_sleep_mode(ctx->dsi);
++}
++
++static int ek79202d_unprepare(struct drm_panel* panel) {
++	struct ek79202d* ctx = panel_to_ek79202d(panel);
++	int ret;
++	dev_dbg(&ctx->dsi->dev, "ek79202d_unprepare()\n");
++
++	ret = mipi_dsi_dcs_enter_sleep_mode(ctx->dsi);
++	if (ret < 0)
++		dev_err(panel->dev, "failed to enter sleep mode: %d\n", ret);
++
++	msleep(120);
++	regulator_disable(ctx->vdd);
++	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
++	return 0;
++}
++
++static const struct drm_display_mode ek79202d_leadership_mode = {
++	.clock = 70000,
++	//.clock 	= 72400,
++
++	.hdisplay = 1280,
++	.hsync_start = 1280 + 10,
++	.hsync_end = 1280 + 10 + 12,
++	.htotal = 1280 + 10 + 12 + 88,
++
++	.vdisplay = 800,
++	.vsync_start = 800 + 2,
++	.vsync_end = 800 + 2 + 1,
++	.vtotal = 800 + 2 + 1 + 23,
++
++	.width_mm = 143,
++	.height_mm = 229,
++
++};
++static const struct drm_display_mode vklcd_kd101wxfid045_default_mode = {
++	.clock 	= 60333,
++    //.clock = 51200,
++
++    .hdisplay = 1280,
++    .hsync_start = 1280 + 84,
++    .hsync_end = 1280 + 84 + 4,
++    .htotal = 1280 + 84 + 4 + 72,
++
++    .vdisplay = 800,
++    .vsync_start = 800 + 21,
++    .vsync_end = 800 + 21 + 4,
++    .vtotal = 800 + 21 + 4 + 15,
++
++    .width_mm = 217,
++    .height_mm = 136,
++};
++
++static int ek79202d_get_modes(struct drm_panel* panel,
++                              struct drm_connector* connector) {
++	//	struct drm_connector *connector = panel->connector;
++	struct ek79202d* ctx = panel_to_ek79202d(panel);
++	struct drm_display_mode* mode;
++
++	dev_dbg(&ctx->dsi->dev, "ek79202d_get_modes()\n");
++
++	// Add for switch panel function
++	mode = drm_mode_duplicate(connector->dev, ctx->desc->mode);
++	if (!mode) {
++		dev_err(&ctx->dsi->dev, "failed to add mode %ux%ux@%u\n",
++				ctx->desc->mode->hdisplay, ctx->desc->mode->vdisplay,
++				drm_mode_vrefresh(ctx->desc->mode));
++		return -ENOMEM;
++	}
++
++	drm_mode_set_name(mode);
++
++	mode->type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
++	drm_mode_probed_add(connector, mode);
++
++	connector->display_info.width_mm = mode->width_mm;
++	connector->display_info.height_mm = mode->height_mm;
++	/* Add Bus Formats support */
++	connector->display_info.bus_flags = fitipower_bus_flags;
++	drm_display_info_set_bus_formats(&connector->display_info,
++									fitipower_bus_formats,
++									ARRAY_SIZE(fitipower_bus_formats));
++	return 1;
++}
++
++static const struct drm_panel_funcs ek79202d_funcs = {
++	.disable = ek79202d_disable,
++	.unprepare = ek79202d_unprepare,
++	.prepare = ek79202d_prepare,
++	.enable = ek79202d_enable,
++	.get_modes = ek79202d_get_modes,
++};
++
++static int ek79202d_dsi_probe(struct mipi_dsi_device* dsi) {
++	struct device* dev = &dsi->dev;
++	struct ek79202d* ctx;
++	int ret;
++	u32 video_mode, dsi_lanes;
++	dev_dbg(&dsi->dev, "ek79202d_dsi_probe()\n");
++
++	ctx = devm_kzalloc(&dsi->dev, sizeof(*ctx), GFP_KERNEL);
++	if (!ctx) {
++		return -ENOMEM;
++	}
++	mipi_dsi_set_drvdata(dsi, ctx);
++	ctx->dsi = dsi;
++	// Add for switch panel function
++	ctx->desc = of_device_get_match_data(&dsi->dev);
++
++	drm_panel_init(&ctx->panel, dev, &ek79202d_funcs,
++		DRM_MODE_CONNECTOR_DSI);
++	ctx->panel.dev = &dsi->dev;
++	ctx->panel.funcs = &ek79202d_funcs;
++
++	ctx->vdd = devm_regulator_get(&dsi->dev, "vdd");
++	if (IS_ERR(ctx->vdd)) {
++		dev_err(&dsi->dev, "Couldn't get vdd regulator\n");
++		return PTR_ERR(ctx->vdd);
++	}
++	/* The enable GPIO is optional, this pin is MIPI DSI/HDMI switch select input. */
++	ctx->enable_gpio = devm_gpiod_get_optional(&dsi->dev, "switch", GPIOD_OUT_HIGH);
++	if (IS_ERR_OR_NULL(ctx->enable_gpio)) {
++		dev_dbg(&dsi->dev, "Couldn't get our switch GPIO\n");
++		ctx->enable_gpio = NULL;
++	}
++	gpiod_set_value(ctx->enable_gpio, 1);
++
++	ctx->reset_gpio = devm_gpiod_get(&dsi->dev, "reset", GPIOD_OUT_LOW);
++	if (IS_ERR(ctx->reset_gpio)) {
++		dev_err(&dsi->dev, "Couldn't get our reset GPIO\n");
++		return PTR_ERR(ctx->reset_gpio);
++	}
++
++	ret = drm_panel_of_backlight(&ctx->panel);
++	if (ret) {
++		dev_err(&dsi->dev, "Couldn't get our backlight(%d)\n", ret);
++		return ret;
++	}
++
++	drm_panel_add(&ctx->panel);
++
++	/* get DSI Mode and Data Lanes from device tree */
++	ret = of_property_read_u32(dsi->dev.of_node, "dsi-lanes", &dsi_lanes);
++	dev_dbg(&ctx->dsi->dev, "ek79202d_dsi_probe - dsi_lanes %d\n", dsi_lanes);
++	dsi->lanes = dsi_lanes;
++
++	dsi->mode_flags = MIPI_DSI_MODE_VIDEO_HSE | MIPI_DSI_MODE_VIDEO;
++	ret = of_property_read_u32(dsi->dev.of_node, "video-mode", &video_mode);
++	if (!ret) {
++		dev_dbg(&ctx->dsi->dev, "ek79202d_dsi_probe - video_mode %d\n", video_mode);
++		switch (video_mode) {
++		case 0:
++			/* burst mode */
++			dsi->mode_flags |= MIPI_DSI_MODE_VIDEO_BURST;
++			break;
++		case 1:
++			/* non-burst mode with sync event */
++			break;
++		case 2:
++			/* non-burst mode with sync pulse */
++			dsi->mode_flags |= MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
++			break;
++		default:
++			dev_warn(&dsi->dev, "invalid video mode %d\n", video_mode);
++			dsi->mode_flags |= MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
++			break;
++		}
++	} else {
++		dev_warn(&ctx->dsi->dev, "ek79202d_dsi_probe - video_mode invalid\n");
++	}
++
++	dsi->format = MIPI_DSI_FMT_RGB888;
++
++	ret = mipi_dsi_attach(dsi);
++	return ret;
++}
++
++static int ek79202d_dsi_remove(struct mipi_dsi_device* dsi) {
++	struct ek79202d* ctx = mipi_dsi_get_drvdata(dsi);
++
++	mipi_dsi_detach(dsi);
++	drm_panel_remove(&ctx->panel);
++
++	return 0;
++}
++
++// Add for switch panel function
++static const struct ek79202d_desc ek79202d_leadership_desc = {
++	.init = ek97202d_leadership_init_cmds,
++	.init_length = ARRAY_SIZE(ek97202d_leadership_init_cmds),
++	.mode = &ek79202d_leadership_mode,
++};
++
++static const struct ek79202d_desc vklcd_kd101wxfid045_desc = {
++	.init = ek79202d_init_vklcd_kd101wxfid045,
++	.init_length = ARRAY_SIZE(ek79202d_init_vklcd_kd101wxfid045),
++	.mode = &vklcd_kd101wxfid045_default_mode,
++};
++
++static const struct of_device_id ek79202d_of_match[] = {
++	{.compatible = "usmp_leadership,ek79202d", .data = &ek79202d_leadership_desc},
++	{.compatible = "vekatech,vklcd-kd101wxfid045", .data = &vklcd_kd101wxfid045_desc},
++	{ }
++};
++MODULE_DEVICE_TABLE(of, ek79202d_of_match);
++
++static struct mipi_dsi_driver ek79202d_driver = {
++	.probe = ek79202d_dsi_probe,
++	.remove = ek79202d_dsi_remove,
++	.driver ={
++		.name = "ek79202d-dsi",
++		.of_match_table = ek79202d_of_match,
++	},
++};
++
++module_mipi_dsi_driver(ek79202d_driver);
++
++MODULE_AUTHOR("Daniel Wu <dwu@xxxxxxxxxxxxxxxxxxxx>");
++MODULE_DESCRIPTION("Fitipower EK79202D Controller Driver");
++MODULE_LICENSE("GPL v2");
+diff --git a/drivers/gpu/drm/rcar-du/rzg2l_mipi_dsi.c b/drivers/gpu/drm/rcar-du/rzg2l_mipi_dsi.c
+index 65c1f11080f6..627ada9892c1 100644
+--- a/drivers/gpu/drm/rcar-du/rzg2l_mipi_dsi.c
++++ b/drivers/gpu/drm/rcar-du/rzg2l_mipi_dsi.c
+@@ -29,11 +29,13 @@
+ #include <drm/drm_modeset_helper_vtables.h>
+ #include <drm/drm_print.h>
+ #include <video/mipi_display.h>
++#include <linux/dma-mapping.h>
+ 
+ #include "rzg2l_mipi_dsi_regs.h"
+ #include "rzg2l_mipi_dsi.h"
+ 
+ #define RZ_G2L_MIPI_DSI_MAX_DATA_LANES	4
++#define DCS_BUF_SIZE			128
+ 
+ struct rzg2l_mipi_dsi {
+ 	struct device *dev;
+@@ -72,6 +74,9 @@ struct rzg2l_mipi_dsi {
+ 	unsigned long hsfreq;
+ 
+ 	bool hsclkmode;	/* 0 for non-continuous and 1 for continuous clock mode */
++
++	dma_addr_t dcs_buf_phys;
++	u8 *dcs_buf_virt;
+ };
+ 
+ #define bridge_to_rzg2l_mipi_dsi(b) \
+@@ -831,19 +836,20 @@ static ssize_t rzg2l_mipi_dsi_host_transfer(struct mipi_dsi_host *host,
+ 	bool is_long = mipi_dsi_packet_format_is_long(msg->type);
+ 	bool is_need_bta = false;
+ 	ssize_t err = 0;
+-	u32 sqch0dsc00ar, sqch0dsc00br, status;
++	u32 sqch0dsc00ar = 0;
++	u32 sqch0dsc00br = 0;
++	u32 status;
+ 	unsigned int timeout;
+-	unsigned int count;
+-	unsigned int i, j;
+-	u32 tx_data, rx_data;
++	unsigned int i;
+ 
+ 	err = mipi_dsi_create_packet(&packet, msg);
+ 	if (err < 0)
+ 		return err;
+ 
+-	/* Temporarily support maximum 16 bytes payload and RX data */
+-	if ((packet.payload_length > 16) || (msg->rx_len > 16))
++	if ((packet.payload_length > DCS_BUF_SIZE) || (msg->rx_len > DCS_BUF_SIZE)) {
++		dev_err(mipi_dsi->dev, "Packet payload too large");
+ 		return -ENOSPC;
++	}
+ 
+ 	if ((msg->flags & MIPI_DSI_MSG_REQ_ACK) ||
+ 	   ((msg->type & MIPI_DSI_GENERIC_READ_REQUEST_0_PARAM ||
+@@ -871,23 +877,15 @@ static ssize_t rzg2l_mipi_dsi_host_transfer(struct mipi_dsi_host *host,
+ 
+ 	/* Sending non-read packets */
+ 	if (is_long) {
+-		/* Count the amount of TXPPDxR will be used */
+-		count = ((packet.payload_length - 1) / 4) + 1;
+ 		/* Long packet transmission */
+ 		sqch0dsc00ar |= SQCH0DSC00AR_FMT_LONG;
+-		/* Write TX Packet Payload Data */
+-		for (i = 0; i < count; i++) {
+-			tx_data = 0;
+-			for (j = 0; j < 4; j++) {
+-				if (packet.payload_length == (4 * i + j))
+-					break;
+-
+-				tx_data |= (packet.payload[4 * i + j] << (8 * j));
+-			}
+ 
+-			rzg2l_mipi_dsi_write(mipi_dsi->link_mmio, TXPPDxR(i),
+-					     tx_data);
+-		}
++		/* Copy TX Packet Payload Data */
++		memcpy(mipi_dsi->dcs_buf_virt, packet.payload, packet.payload_length);
++
++		/* Set memory area address */
++		rzg2l_mipi_dsi_write(mipi_dsi->link_mmio, SQCH0DSC00DR, (u32) mipi_dsi->dcs_buf_phys);
++
+ 	} else {
+ 		/* Short packet transmission */
+ 		sqch0dsc00ar |= SQCH0DSC00AR_FMT_SHORT;
+@@ -903,8 +901,8 @@ static ssize_t rzg2l_mipi_dsi_host_transfer(struct mipi_dsi_host *host,
+ 
+ 	rzg2l_mipi_dsi_write(mipi_dsi->link_mmio, SQCH0DSC00AR, sqch0dsc00ar);
+ 
+-	/* Packet Payload Data register is used to data select */
+-	sqch0dsc00br = SQCH0DSC00BR_DTSEL_PAYLOAD_SIZE;
++	/* Packet Payload Data memory space is used */
++	sqch0dsc00br = SQCH0DSC00BR_DTSEL_MEM_SPACE;
+ 	rzg2l_mipi_dsi_write(mipi_dsi->link_mmio, SQCH0DSC00BR, sqch0dsc00br);
+ 
+ 	/* Indicate rx result save slot number 0 */
+@@ -979,18 +977,8 @@ static ssize_t rzg2l_mipi_dsi_host_transfer(struct mipi_dsi_host *host,
+ 			case MIPI_DSI_RX_GENERIC_LONG_READ_RESPONSE:
+ 			case MIPI_DSI_RX_DCS_LONG_READ_RESPONSE:
+ 				size = (status & (RXRSS0R_DATA0 | RXRSS0R_DATA1));
+-				count = ((size - 1) / 4) + 1;
+ 				/* Read RX Packet Payload Data */
+-				for (i = 0; i < count; i++) {
+-					rx_data = rzg2l_mipi_dsi_read(mipi_dsi->link_mmio,
+-								      RXPPDxR(i));
+-					for (j = 0; j < 4; j++) {
+-						if (size == (4 * i + j))
+-							break;
+-						msg_rx[4 * i + j] = (rx_data >> (8 * j)) & 0xff;
+-					}
+-				}
+-				err = size;
++				memcpy(msg_rx, mipi_dsi->dcs_buf_virt, size);
+ 				break;
+ 			default:
+ 				dev_err(mipi_dsi->dev,
+@@ -1211,6 +1199,11 @@ static int rzg2l_mipi_dsi_probe(struct platform_device *pdev)
+ 
+ 	drm_bridge_add(&mipi_dsi->bridge);
+ 
++	mipi_dsi->dcs_buf_virt = dma_alloc_coherent(mipi_dsi->host.dev,
++		DCS_BUF_SIZE,
++		&mipi_dsi->dcs_buf_phys,
++		GFP_KERNEL);
++
+ 	return 0;
+ };
+ 
+@@ -1218,6 +1211,8 @@ static int rzg2l_mipi_dsi_remove(struct platform_device *pdev)
+ {
+ 	struct rzg2l_mipi_dsi *mipi_dsi = platform_get_drvdata(pdev);
+ 
++	dma_free_coherent(mipi_dsi->host.dev, DCS_BUF_SIZE, mipi_dsi->dcs_buf_virt, mipi_dsi->dcs_buf_phys);
++
+ 	drm_bridge_remove(&mipi_dsi->bridge);
+ 
+ 	mipi_dsi_host_unregister(&mipi_dsi->host);
